@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WEBメモ帳 (Firebase版)</title>
+    <title>WEBメモ帳 (Firebaseカスタム認証版 - 非推奨)</title>
     <style>
         body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; margin-top: 50px; }
         #auth-container, #memo-container { background-color: #f0f0f0; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
@@ -18,9 +18,9 @@
     </style>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
-    </head>
+
+</head>
 <body>
 
     <div id="auth-container">
@@ -42,7 +42,7 @@
     </div>
 
     <script>
-        // --- ここに、ステップ3でFirebaseコンソールからコピーした設定を貼り付けます ---
+        // --- ここに、Firebaseコンソールからコピーした設定を貼り付けます ---
         const firebaseConfig = {
   apiKey: "AIzaSyARuAgDXl2ydCKJjWAyl8cOQmIGRBYW2iU",
   authDomain: "mywebmemoapp.firebaseapp.com",
@@ -57,8 +57,7 @@
         // Firebaseの初期化
         firebase.initializeApp(firebaseConfig);
 
-        // 必要なFirebaseサービスのインスタンスを取得
-        const auth = firebase.auth();
+        // Firestoreサービスのインスタンスを取得 (Authenticationは使用しない)
         const db = firebase.firestore();
 
         // DOM要素の取得
@@ -68,75 +67,117 @@
         const passwordInput = document.getElementById('password');
         const authMessage = document.getElementById('auth-message');
         const memoContent = document.getElementById('memo-content');
-        const currentUserEmail = document.getElementById('current-user-email');
+        const currentUserEmailDisplay = document.getElementById('current-user-email');
 
-        let currentUser = null; // 現在ログイン中のユーザー情報を保持
+        let currentUserId = null; // 現在ログイン中のユーザーID（ここではメールアドレスを使用）
 
-        // 認証状態の監視
-        auth.onAuthStateChanged(user => {
-            if (user) {
-                // ユーザーがログインしている場合
-                currentUser = user;
-                currentUserEmail.textContent = `ユーザー: ${user.email}`;
+        // ページロード時の初期表示
+        document.addEventListener('DOMContentLoaded', () => {
+            // LocalStorageからログイン状態をチェック
+            const storedUserEmail = localStorage.getItem('loggedInUserEmail');
+            if (storedUserEmail) {
+                currentUserId = storedUserEmail;
+                currentUserEmailDisplay.textContent = `ユーザー: ${storedUserEmail}`;
                 showMemoPage();
-                loadMemo(user.uid); // ユーザーのUIDを使ってメモをロード
+                loadMemo(storedUserEmail); // ログインしたユーザーのメモをロード
             } else {
-                // ユーザーがログアウトしている場合
-                currentUser = null;
                 showAuthPage();
-                memoContent.value = ''; // メモをクリア
             }
         });
 
-        // --- 認証関連の関数 ---
 
+        // --- 認証関連の関数 (カスタム実装) ---
+
+        // 新規ユーザー登録
         async function signup() {
             const email = emailInput.value;
             const password = passwordInput.value;
+            if (!email || !password) {
+                authMessage.textContent = 'メールアドレスとパスワードを入力してください。';
+                return;
+            }
+
             try {
-                await auth.createUserWithEmailAndPassword(email, password);
+                // メールアドレスがすでに存在するかチェック
+                const userDoc = await db.collection('users').doc(email).get();
+                if (userDoc.exists) {
+                    authMessage.textContent = 'このメールアドレスは既に登録されています。';
+                    return;
+                }
+
+                // Firestoreにユーザー情報を直接保存（←パスワードが平文で保存されます！危険！）
+                await db.collection('users').doc(email).set({
+                    email: email,
+                    password: password // ←パスワードが平文で保存されます！
+                });
+
+                // 登録成功後、自動的にログイン状態にする
+                currentUserId = email;
+                localStorage.setItem('loggedInUserEmail', email);
+                currentUserEmailDisplay.textContent = `ユーザー: ${email}`;
+                showMemoPage();
+                loadMemo(email);
                 authMessage.textContent = '新規登録成功！自動でログインしました。';
+
             } catch (error) {
                 authMessage.textContent = `新規登録エラー: ${error.message}`;
                 console.error("サインアップエラー:", error);
             }
         }
 
+        // 既存ユーザーログイン
         async function login() {
             const email = emailInput.value;
             const password = passwordInput.value;
+            if (!email || !password) {
+                authMessage.textContent = 'メールアドレスとパスワードを入力してください。';
+                return;
+            }
+
             try {
-                await auth.signInWithEmailAndPassword(email, password);
-                authMessage.textContent = 'ログイン成功！';
+                // Firestoreからユーザー情報を取得
+                const userDoc = await db.collection('users').doc(email).get();
+
+                // ユーザーが存在し、かつパスワードが一致するかチェック
+                if (userDoc.exists && userDoc.data().password === password) {
+                    currentUserId = email;
+                    localStorage.setItem('loggedInUserEmail', email);
+                    currentUserEmailDisplay.textContent = `ユーザー: ${email}`;
+                    showMemoPage();
+                    loadMemo(email);
+                    authMessage.textContent = 'ログイン成功！';
+                } else {
+                    authMessage.textContent = 'メールアドレスまたはパスワードが間違っています。';
+                }
             } catch (error) {
                 authMessage.textContent = `ログインエラー: ${error.message}`;
                 console.error("ログインエラー:", error);
             }
         }
 
-        async function logout() {
-            try {
-                await auth.signOut();
-                authMessage.textContent = 'ログアウトしました。';
-            } catch (error) {
-                authMessage.textContent = `ログアウトエラー: ${error.message}`;
-                console.error("ログアウトエラー:", error);
-            }
+        // ログアウト
+        function logout() {
+            currentUserId = null;
+            localStorage.removeItem('loggedInUserEmail'); // ローカルストレージからログイン情報を削除
+            showAuthPage();
+            memoContent.value = ''; // メモの内容をクリア
+            authMessage.textContent = ''; // メッセージをクリア
         }
 
         // --- メモ保存・読み込み関数 (Firestoreを使用) ---
 
+        // メモをFirestoreに保存
         async function saveMemo() {
-            if (!currentUser) {
+            if (!currentUserId) {
                 authMessage.textContent = 'ログインしてください。';
                 return;
             }
             const memoText = memoContent.value;
-            // ユーザーのUIDをドキュメントIDとして使用し、ユーザーごとのメモを保存
             try {
-                await db.collection('memos').doc(currentUser.uid).set({
+                // ログインしているユーザーのメールアドレスをドキュメントIDとしてメモを保存
+                await db.collection('memos').doc(currentUserId).set({
                     content: memoText,
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp() // サーバーのタイムスタンプ
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 alert('メモを保存しました！');
             } catch (error) {
@@ -145,9 +186,10 @@
             }
         }
 
-        async function loadMemo(uid) {
+        // メモをFirestoreから読み込み
+        async function loadMemo(userId) {
             try {
-                const doc = await db.collection('memos').doc(uid).get();
+                const doc = await db.collection('memos').doc(userId).get();
                 if (doc.exists) {
                     memoContent.value = doc.data().content || '';
                 } else {
