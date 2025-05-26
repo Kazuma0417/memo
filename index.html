@@ -14,6 +14,7 @@
         #logout-button { background-color: #dc3545; margin-left: auto; }
         #logout-button:hover { background-color: #c82333; }
         .message { color: red; margin-top: 10px; }
+        .success-message { color: green; margin-top: 10px; } /* 新規登録成功用のスタイル */
         .header-controls { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 10px; }
     </style>
     
@@ -93,6 +94,7 @@
             const email = emailInput.value;
             const password = passwordInput.value;
             if (!email || !password) {
+                authMessage.className = 'message'; // メッセージスタイルをリセット
                 authMessage.textContent = 'メールアドレスとパスワードを入力してください。';
                 return;
             }
@@ -101,6 +103,7 @@
                 // メールアドレスがすでに存在するかチェック
                 const userDoc = await db.collection('users').doc(email).get();
                 if (userDoc.exists) {
+                    authMessage.className = 'message';
                     authMessage.textContent = 'このメールアドレスは既に登録されています。';
                     return;
                 }
@@ -111,15 +114,15 @@
                     password: password // ←パスワードが平文で保存されます！
                 });
 
-                // 登録成功後、自動的にログイン状態にする
-                currentUserId = email;
-                localStorage.setItem('loggedInUserEmail', email);
-                currentUserEmailDisplay.textContent = `ユーザー: ${email}`;
-                showMemoPage();
-                loadMemo(email);
-                authMessage.textContent = '新規登録成功！自動でログインしました。';
+                // 登録成功後、ログインはせずにメッセージ表示
+                authMessage.className = 'success-message'; // 成功メッセージ用のスタイル
+                authMessage.textContent = '新規登録が完了しました。ログインしてください。';
+                // 入力フィールドはそのまま残しておく
+                // emailInput.value = '';
+                // passwordInput.value = '';
 
             } catch (error) {
+                authMessage.className = 'message';
                 authMessage.textContent = `新規登録エラー: ${error.message}`;
                 console.error("サインアップエラー:", error);
             }
@@ -130,6 +133,7 @@
             const email = emailInput.value;
             const password = passwordInput.value;
             if (!email || !password) {
+                authMessage.className = 'message';
                 authMessage.textContent = 'メールアドレスとパスワードを入力してください。';
                 return;
             }
@@ -145,11 +149,13 @@
                     currentUserEmailDisplay.textContent = `ユーザー: ${email}`;
                     showMemoPage();
                     loadMemo(email);
-                    authMessage.textContent = 'ログイン成功！';
+                    authMessage.textContent = ''; // 成功時はメッセージをクリア
                 } else {
+                    authMessage.className = 'message';
                     authMessage.textContent = 'メールアドレスまたはパスワードが間違っています。';
                 }
             } catch (error) {
+                authMessage.className = 'message';
                 authMessage.textContent = `ログインエラー: ${error.message}`;
                 console.error("ログインエラー:", error);
             }
@@ -211,8 +217,8 @@
         function showAuthPage() {
             authContainer.style.display = 'block';
             memoContainer.style.display = 'none';
-            emailInput.value = ''; // 入力フィールドをクリア
-            passwordInput.value = ''; // 入力フィールドをクリア
+            // emailInput.value = ''; // 新規登録後にログインするためにクリアしない
+            // passwordInput.value = ''; // 新規登録後にログインするためにクリアしない
         }
     </script>
 </body>
