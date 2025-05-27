@@ -3,15 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WEBメモ帳</title> <style>
+    <title>WEBメモ帳</title>
+    <style>
         body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; margin-top: 20px; }
         .container { background-color: #f0f0f0; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); margin-bottom: 20px; width: 80%; max-width: 800px; }
         .auth-form input { margin-bottom: 10px; padding: 8px; width: calc(100% - 16px); box-sizing: border-box; }
-        textarea { width: 100%; height: 200px; margin-bottom: 10px; padding: 10px; border: 1px solid #ccc; border-radius: 44px; box-sizing: border-box; } /* typo: 44px should be 4px */
+        textarea { width: 100%; height: 200px; margin-bottom: 10px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; } /* ★ここを修正しました: 44px -> 4px */
         button { padding: 8px 12px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 5px; }
         button:hover { background-color: #0056b3; }
         .delete-button { background-color: #dc3545; }
         .delete-button:hover { background-color: #c82333; }
+        /* 閲覧ボタンの色を削除ボタンと同じ赤色に変更 */
+        .view-button { background-color: #dc3545; } 
+        .view-button:hover { background-color: #c82333; }
         .message { color: red; margin-top: 10px; }
         .success-message { color: green; margin-top: 10px; }
         .header-controls { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 10px; }
@@ -30,6 +34,42 @@
             padding: 5px 10px;
             border-radius: 5px;
             z-index: 1000;
+        }
+
+        /* メモ閲覧ポップアップのスタイル (簡易的なもの) */
+        #memo-viewer-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        #memo-viewer-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.2);
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        #memo-viewer-content textarea {
+            width: 100%;
+            height: 300px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            box-sizing: border-box;
+            resize: vertical;
+        }
+        #memo-viewer-content button {
+            margin-top: 10px;
+            float: right;
         }
     </style>
     
@@ -86,9 +126,18 @@
 
     <div id="version-info"></div>
 
+    <div id="memo-viewer-overlay" style="display: none;">
+        <div id="memo-viewer-content">
+            <h3>メモ内容: <span id="viewing-user-email"></span></h3>
+            <textarea id="memo-viewer-textarea" readonly></textarea>
+            <button onclick="closeMemoViewer()">閉じる</button>
+        </div>
+    </div>
+
+
     <script>
         // ★★★ ここにバージョン番号を書き込んでください ★★★
-        const APP_VERSION = 'v500'; 
+        const APP_VERSION = 'v1.0.0'; 
 
         // --- Firebase設定（Firebase コンソールからコピーしたもの） ---
         const firebaseConfig = {
@@ -120,7 +169,6 @@
         const loginForm = document.getElementById('login-form'); 
         const versionInfoElement = document.getElementById('version-info');
 
-        // ★メモ閲覧用のポップアップ要素も取得★
         const memoViewerOverlay = document.getElementById('memo-viewer-overlay'); 
         const memoViewerTextarea = document.getElementById('memo-viewer-textarea'); 
         const viewingUserEmailDisplay = document.getElementById('viewing-user-email'); 
@@ -225,7 +273,7 @@
                 // 閲覧ボタンの追加
                 const viewButton = document.createElement('button');
                 viewButton.textContent = '閲覧';
-                viewButton.className = 'view-button'; // ここが赤色に変更される
+                viewButton.className = 'view-button';
                 viewButton.onclick = () => viewUserMemo(user.email);
                 actionCell.appendChild(viewButton);
 
@@ -309,7 +357,7 @@
             }
 
             // 'admin'というIDは新規登録させない（コード内直書きの管理者IDと衝突するため）
-            if (email === "admin") { 
+            if (email === "admin") { // 管理者用ID 'admin'を直接参照
                 authMessage.className = 'message';
                 authMessage.textContent = 'このIDは管理者用です。新規登録できません。';
                 return;
@@ -325,8 +373,8 @@
 
                 await db.collection('users').doc(email).set({
                     email: email,
-                    password: password, 
-                    isAdmin: false 
+                    password: password, // 平文で保存
+                    isAdmin: false // 新規登録時はデフォルトで管理者ではない
                 });
 
                 authMessage.className = 'success-message';
@@ -341,7 +389,7 @@
 
         async function login() {
             const email = emailInput.value;
-            const password = passwordInput.value; 
+            const password = passwordInput.value; // ★ここを修正しました (passwordInput.value が正しい) ★
 
             if (!email || !password) {
                 authMessage.className = 'message';
@@ -350,18 +398,6 @@
             }
 
             try {
-                // 管理者IDのチェックを先に行う (コードに直書きされた管理者ID/パスワード)
-                if (email === 'admin' && password === 'password') { 
-                    isAdminLoggedIn = true;
-                    currentUserId = 'admin'; 
-                    localStorage.setItem('adminLoggedIn', 'true');
-                    localStorage.setItem('loggedInUserEmail', 'admin'); 
-                    authMessage.textContent = ''; 
-                    showAdminDashboard();
-                    loadUsers(); 
-                    return; 
-                }
-
                 // Firestoreからユーザー情報を取得
                 const userDoc = await db.collection('users').doc(email).get();
 
@@ -369,6 +405,7 @@
                 if (userDoc.exists && userDoc.data().password === password) {
                     const userData = userDoc.data();
                     
+                    // isAdminフラグがtrueなら管理者
                     if (userData.isAdmin) { 
                         isAdminLoggedIn = true;
                         currentUserId = email; 
