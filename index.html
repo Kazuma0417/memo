@@ -39,7 +39,7 @@
         <table id="users-table">
             <thead>
                 <tr>
-                    <th>メールアドレス (ID)</th>
+                    <th>ID (メールアドレス)</th>
                     <th>パスワード (平文)</th>
                     <th>操作</th>
                 </tr>
@@ -86,8 +86,8 @@
 
         // !!! 警告: これらの値はウェブサイトのソースコードを閲覧できる人には誰でも見えてしまいます。 !!!
         // !!! 非常に大きなセキュリティリスクがあるため、本番環境での使用は絶対に避けてください。  !!!
-        const ADMIN_EMAIL = 'admin@example.com'; // 管理者用のメールアドレス
-        const ADMIN_PASSWORD = 'supersecret';    // 管理者用のパスワード
+        const ADMIN_EMAIL = 'admin';       // 管理者用ID
+        const ADMIN_PASSWORD = 'password';    // 管理者用パスワード
         // -----------------------------------------------------------------------------------------
 
         // Firebase の初期化
@@ -226,7 +226,7 @@
             // 管理者メールアドレスでは新規登録させない（衝突回避）
             if (email === ADMIN_EMAIL) {
                 authMessage.className = 'message';
-                authMessage.textContent = 'このメールアドレスは管理者用です。新規登録できません。';
+                authMessage.textContent = 'このIDは管理者用です。新規登録できません。';
                 return;
             }
 
@@ -234,7 +234,7 @@
                 const userDoc = await db.collection('users').doc(email).get();
                 if (userDoc.exists) {
                     authMessage.className = 'message';
-                    authMessage.textContent = 'このメールアドレスは既に登録されています。';
+                    authMessage.textContent = 'このIDは既に登録されています。';
                     return;
                 }
 
@@ -255,10 +255,11 @@
 
         async function login() {
             const email = emailInput.value;
-            const password = passwordInput.value;
+            const password = password.value; // ここを修正しました
+
             if (!email || !password) {
                 authMessage.className = 'message';
-                authMessage.textContent = 'メールアドレスとパスワードを入力してください。';
+                authMessage.textContent = 'IDとパスワードを入力してください。';
                 return;
             }
 
@@ -285,7 +286,7 @@
                     loadMemo(email);
                 } else {
                     authMessage.className = 'message';
-                    authMessage.textContent = 'メールアドレスまたはパスワードが間違っています。';
+                    authMessage.textContent = 'IDまたはパスワードが間違っています。';
                 }
             } catch (error) {
                 authMessage.className = 'message';
