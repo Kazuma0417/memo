@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WEBメモ帳 (管理者兼用ログイン - 危険なテスト用)</title>
+    <title>WEBメモ帳 (Firebaseカスタム認証版 - 管理者含む - 非推奨)</title>
     <style>
         body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; margin-top: 20px; }
         .container { background-color: #f0f0f0; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); margin-bottom: 20px; width: 80%; max-width: 800px; }
@@ -41,6 +41,7 @@
                 <tr>
                     <th>ID (メールアドレス)</th>
                     <th>パスワード (平文)</th>
+                    <th>管理者？</th>
                     <th>操作</th>
                 </tr>
             </thead>
@@ -84,12 +85,6 @@
 };
         // ----------------------------------------------------------------------
 
-        // !!! 警告: これらの値はウェブサイトのソースコードを閲覧できる人には誰でも見えてしまいます。 !!!
-        // !!! 非常に大きなセキュリティリスクがあるため、本番環境での使用は絶対に避けてください。  !!!
-        const ADMIN_EMAIL = 'admin';       // 管理者用ID
-        const ADMIN_PASSWORD = 'password';    // 管理者用パスワード
-        // -----------------------------------------------------------------------------------------
-
         // Firebase の初期化
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
@@ -104,7 +99,7 @@
         const authContainer = document.getElementById('auth-container');
         const memoContainer = document.getElementById('memo-container');
         const emailInput = document.getElementById('email');
-        const passwordInput = document.getElementById('password'); // passwordInput を正しく取得
+        const passwordInput = document.getElementById('password'); 
         const authMessage = document.getElementById('auth-message');
         const memoContent = document.getElementById('memo-content');
         const currentUserEmailDisplay = document.getElementById('current-user-email');
@@ -115,27 +110,26 @@
 
         // --- ページロード時の初期表示 ---
         document.addEventListener('DOMContentLoaded', () => {
-            // 管理者ログイン状態のチェック
+            // 管理者ログイン状態のチェック (LocalStorageに基づく)
             if (localStorage.getItem('adminLoggedIn') === 'true') {
                 isAdminLoggedIn = true;
                 showAdminDashboard();
-                loadUsers(); // 管理者ダッシュボード表示時にユーザー一覧をロード
+                loadUsers(); 
             } else {
-                // 通常ユーザーログイン状態のチェック
+                // 通常ユーザーログイン状態のチェック (LocalStorageに基づく)
                 const storedUserEmail = localStorage.getItem('loggedInUserEmail');
                 if (storedUserEmail) {
                     currentUserId = storedUserEmail;
                     currentUserEmailDisplay.textContent = `ユーザー: ${storedUserEmail}`;
                     showMemoPage();
-                    loadMemo(storedUserEmail); // ログインしたユーザーのメモをロード
+                    loadMemo(storedUserEmail); 
                 } else {
-                    showAuthPage(); // 管理者でもユーザーでもない場合、通常の認証画面を表示
+                    showAuthPage(); // どちらでもない場合、認証画面を表示
                 }
             }
         });
 
         // --- 管理者認証関連関数 ---
-        // 管理者用のログインは通常のlogin関数内で処理されるため、adminLogin関数は不要になる
         function logoutAdmin() {
             isAdminLoggedIn = false;
             localStorage.removeItem('adminLoggedIn');
@@ -146,18 +140,23 @@
 
         // --- ユーザー管理関連関数 (管理者ダッシュボード用) ---
         async function loadUsers() {
-            if (!isAdminLoggedIn) {
+            if (!isAdminLoggedIn) { // 管理者としてログインしているか確認
                 adminMessage.textContent = '管理者としてログインしてください。';
-                // showAuthPage(); // この場合は常に認証ページから来るので不要
                 return;
             }
 
             try {
+                // 'users' コレクションから全てのユーザー情報を取得
                 const usersSnapshot = await db.collection('users').get();
                 const users = [];
                 usersSnapshot.forEach(doc => {
                     const userData = doc.data();
-                    users.push({ id: doc.id, email: userData.email, password: userData.password });
+                    users.push({ 
+                        id: doc.id, 
+                        email: userData.email, 
+                        password: userData.password, // ★平文パスワードを取得！危険！★
+                        isAdmin: userData.isAdmin || false // 管理者フラグも取得
+                    });
                 });
                 renderUsersTable(users);
                 adminMessage.className = 'success-message';
@@ -170,15 +169,17 @@
         }
 
         function renderUsersTable(users) {
-            usersTableBody.innerHTML = ''; // 既存の行をクリア
+            usersTableBody.innerHTML = ''; 
             if (users.length === 0) {
-                usersTableBody.innerHTML = '<tr><td colspan="3">登録されているユーザーはいません。</td></tr>';
+                usersTableBody.innerHTML = '<tr><td colspan="4">登録されているユーザーはいません。</td></tr>'; // 列数修正
                 return;
             }
             users.forEach(user => {
                 const row = usersTableBody.insertRow();
                 row.insertCell().textContent = user.email;
                 row.insertCell().textContent = user.password; // ★平文パスワード表示！危険！★
+                row.insertCell().textContent = user.isAdmin ? 'はい' : 'いいえ'; // 管理者フラグ表示
+
                 const actionCell = row.insertCell();
                 const deleteButton = document.createElement('button');
                 deleteButton.textContent = '削除';
@@ -193,14 +194,15 @@
                 return;
             }
 
-            if (!isAdminLoggedIn) {
+            if (!isAdminLoggedIn) { // 管理者としてログインしているか確認
                 adminMessage.textContent = '管理者としてログインしてください。';
-                // showAuthPage(); // この場合は常に認証ページから来るので不要
                 return;
             }
 
             try {
+                // users コレクションからユーザーのドキュメントを削除
                 await db.collection('users').doc(email).delete();
+                // memos コレクションからそのユーザーのメモドキュメントも削除
                 await db.collection('memos').doc(email).delete();
                 
                 adminMessage.className = 'success-message';
@@ -216,7 +218,7 @@
         // --- 通常ユーザー認証関連関数（管理者ログイン兼用） ---
         async function signup() {
             const email = emailInput.value;
-            const password = passwordInput.value; // ここはpasswordInput.valueで正しい
+            const password = passwordInput.value; 
 
             if (!email || !password) {
                 authMessage.className = 'message';
@@ -224,14 +226,8 @@
                 return;
             }
 
-            // 管理者IDでは新規登録させない（衝突回避）
-            if (email === ADMIN_EMAIL) {
-                authMessage.className = 'message';
-                authMessage.textContent = 'このIDは管理者用です。新規登録できません。';
-                return;
-            }
-
             try {
+                // 既存ユーザーのチェック
                 const userDoc = await db.collection('users').doc(email).get();
                 if (userDoc.exists) {
                     authMessage.className = 'message';
@@ -239,9 +235,11 @@
                     return;
                 }
 
+                // Firestoreにユーザー情報を直接保存（パスワードが平文で保存されます！危険！）
                 await db.collection('users').doc(email).set({
                     email: email,
-                    password: password // 平文で保存
+                    password: password, // 平文で保存
+                    isAdmin: false // 新規登録時はデフォルトで管理者ではない
                 });
 
                 authMessage.className = 'success-message';
@@ -256,7 +254,7 @@
 
         async function login() {
             const email = emailInput.value;
-            const password = passwordInput.value; // ★ここを修正しました★
+            const password = passwordInput.value; 
 
             if (!email || !password) {
                 authMessage.className = 'message';
@@ -264,27 +262,31 @@
                 return;
             }
 
-            // === 管理者ログインの判定 ===
-            if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-                isAdminLoggedIn = true;
-                localStorage.setItem('adminLoggedIn', 'true');
-                authMessage.textContent = ''; // メッセージをクリア
-                showAdminDashboard();
-                loadUsers(); // 管理者ダッシュボード表示時にユーザー一覧をロード
-                return; // 管理者としてログインしたのでここで処理を終了
-            }
-
-            // === 通常ユーザーログインの判定 ===
             try {
+                // Firestoreからユーザー情報を取得
                 const userDoc = await db.collection('users').doc(email).get();
 
+                // ユーザーが存在し、かつパスワードが一致するかチェック
                 if (userDoc.exists && userDoc.data().password === password) {
-                    currentUserId = email;
-                    localStorage.setItem('loggedInUserEmail', email);
-                    currentUserEmailDisplay.textContent = `ユーザー: ${email}`;
-                    authMessage.textContent = ''; // 成功時はメッセージをクリア
-                    showMemoPage();
-                    loadMemo(email);
+                    const userData = userDoc.data();
+                    
+                    // 管理者としてログインするかの判定
+                    if (userData.isAdmin) {
+                        isAdminLoggedIn = true;
+                        localStorage.setItem('adminLoggedIn', 'true');
+                        authMessage.textContent = ''; 
+                        showAdminDashboard();
+                        loadUsers(); 
+                        return; // 管理者としてログインしたので処理を終了
+                    } else {
+                        // 通常ユーザーとしてログイン
+                        currentUserId = email;
+                        localStorage.setItem('loggedInUserEmail', email);
+                        currentUserEmailDisplay.textContent = `ユーザー: ${email}`;
+                        authMessage.textContent = ''; 
+                        showMemoPage();
+                        loadMemo(email);
+                    }
                 } else {
                     authMessage.className = 'message';
                     authMessage.textContent = 'IDまたはパスワードが間違っています。';
@@ -296,7 +298,7 @@
             }
         }
 
-        function logout() {
+        function logout() { // 通常ユーザーのログアウト
             currentUserId = null;
             localStorage.removeItem('loggedInUserEmail');
             showAuthPage();
