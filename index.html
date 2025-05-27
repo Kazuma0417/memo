@@ -5,47 +5,147 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WEBメモ帳</title>
     <style>
-        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; margin-top: 20px; }
-        .container { background-color: #f0f0f0; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); margin-bottom: 20px; width: 80%; max-width: 800px; }
-        .auth-form input { margin-bottom: 10px; padding: 8px; width: calc(100% - 16px); box-sizing: border-box; }
-        textarea { width: 100%; height: 200px; margin-bottom: 10px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        button { padding: 8px 12px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 5px; }
-        button:hover { background-color: #0056b3; }
-        .delete-button { background-color: #dc3545; }
-        .delete-button:hover { background-color: #c82333; }
-        .view-button { background-color: #dc3545; }
-        .view-button:hover { background-color: #c82333; }
-        .message { color: red; margin-top: 10px; }
-        .success-message { color: green; margin-top: 10px; }
-        .header-controls { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 10px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; word-break: break-all; }
-        .section-separator { margin: 40px 0; border: none; border-top: 1px solid #eee; }
-
-        #version-info {
-            position: fixed; bottom: 10px; right: 10px;
-            font-size: 0.8em; color: #888; background-color: rgba(255, 255, 255, 0.7);
-            padding: 5px 10px; border-radius: 5px; z-index: 1000;
+        body {
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
         }
+        .container {
+            background-color: #f0f0f0;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            width: 80%;
+            max-width: 800px;
+        }
+        .auth-form input {
+            margin-bottom: 10px;
+            padding: 8px;
+            width: calc(100% - 16px);
+            box-sizing: border-box;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px; /* ここは4pxで正しいです */
+            box-sizing: border-box;
+        }
+        button {
+            padding: 8px 12px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .delete-button {
+            background-color: #dc3545;
+        }
+        .delete-button:hover {
+            background-color: #c82333;
+        }
+        /* 閲覧ボタンの色を削除ボタンと同じ赤色 */
+        .view-button {
+            background-color: #dc3545;
+        }
+        .view-button:hover {
+            background-color: #c82333;
+        }
+        .message {
+            color: red;
+            margin-top: 10px;
+        }
+        .success-message {
+            color: green;
+            margin-top: 10px;
+        }
+        .header-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+            word-break: break-all;
+        }
+        .section-separator {
+            margin: 40px 0;
+            border: none;
+            border-top: 1px solid #eee;
+        }
+
+        /* バージョン表示用のスタイル */
+        #version-info {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            font-size: 0.8em;
+            color: #888;
+            background-color: rgba(255, 255, 255, 0.7);
+            padding: 5px 10px;
+            border-radius: 5px;
+            z-index: 1000;
+        }
+
+        /* メモ閲覧ポップアップのスタイル (簡易的なもの) */
         #memo-viewer-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0, 0, 0, 0.5); display: flex;
-            justify-content: center; align-items: center; z-index: 2000;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
         }
         #memo-viewer-content {
-            background-color: white; padding: 20px; border-radius: 8px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.2); width: 90%; max-width: 600px;
-            max-height: 80vh; overflow-y: auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.2);
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
         }
         #memo-viewer-content textarea {
-            width: 100%; height: 300px; border: 1px solid #ccc;
-            padding: 10px; box-sizing: border-box; resize: vertical;
+            width: 100%;
+            height: 300px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            box-sizing: border-box;
+            resize: vertical;
         }
-        #memo-viewer-content button { margin-top: 10px; float: right; }
+        #memo-viewer-content button {
+            margin-top: 10px;
+            float: right;
+        }
     </style>
-
+    
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+
 </head>
 <body>
 
@@ -67,7 +167,8 @@
                     <th>操作</th>
                 </tr>
             </thead>
-            <tbody></tbody>
+            <tbody>
+                </tbody>
         </table>
     </div>
 
@@ -75,11 +176,11 @@
 
     <div id="auth-container" class="container">
         <h2>ログイン / 新規登録</h2>
-        <form id="login-form" class="auth-form">
-            <input type="text" id="email" placeholder="ID" required><br>
+        <form id="login-form" class="auth-form"> 
+            <input type="text" id="email" placeholder="ID" required><br> 
             <input type="password" id="password" placeholder="パスワード" required><br>
-            <button type="button" onclick="signup()">新規登録</button>
-            <button type="submit">ログイン</button>
+            <button type="button" onclick="signup()">新規登録</button> 
+            <button type="submit">ログイン</button> 
             <p id="auth-message" class="message"></p>
         </form>
     </div>
@@ -106,9 +207,9 @@
 
     <script>
         // ★★★ ここにバージョン番号を書き込んでください ★★★
-        const APP_VERSION = 'v1000';
+        const APP_VERSION = 'v1.0.0'; 
 
-        // --- Firebase設定 ---
+        // --- Firebase設定（Firebase コンソールからコピーしたもの） ---
         const firebaseConfig = {
   apiKey: "AIzaSyARuAgDXl2ydCKJjWAyl8cOQmIGRBYW2iU",
   authDomain: "mywebmemoapp.firebaseapp.com",
@@ -118,236 +219,251 @@
   appId: "1:381164213024:web:8c4f1d10d169ed039dfd45",
   measurementId: "G-XGTJGL45B1"
 };
+        // ----------------------------------------------------------------------
 
         // Firebase の初期化
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // --- DOM 要素のキャッシュ ---
-        const DOM = {
-            adminDashboardContainer: document.getElementById('admin-dashboard-container'),
-            adminMessage: document.getElementById('admin-message'),
-            usersTableBody: document.querySelector('#users-table tbody'),
-            authContainer: document.getElementById('auth-container'),
-            memoContainer: document.getElementById('memo-container'),
-            emailInput: document.getElementById('email'),
-            passwordInput: document.getElementById('password'),
-            authMessage: document.getElementById('auth-message'),
-            memoContent: document.getElementById('memo-content'),
-            currentUserEmailDisplay: document.getElementById('current-user-email'),
-            loginForm: document.getElementById('login-form'),
-            versionInfoElement: document.getElementById('version-info'),
-            memoViewerOverlay: document.getElementById('memo-viewer-overlay'),
-            memoViewerTextarea: document.getElementById('memo-viewer-textarea'),
-            viewingUserEmailDisplay: document.getElementById('viewing-user-email')
-        };
+        // --- DOM 要素の取得 ---
+        const adminDashboardContainer = document.getElementById('admin-dashboard-container');
+        const adminMessage = document.getElementById('admin-message');
+        const usersTableBody = document.querySelector('#users-table tbody');
+        const authContainer = document.getElementById('auth-container');
+        const memoContainer = document.getElementById('memo-container');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password'); 
+        const authMessage = document.getElementById('auth-message');
+        const memoContent = document.getElementById('memo-content');
+        const currentUserEmailDisplay = document.getElementById('current-user-email');
+        const loginForm = document.getElementById('login-form'); 
+        const versionInfoElement = document.getElementById('version-info');
+
+        const memoViewerOverlay = document.getElementById('memo-viewer-overlay'); 
+        const memoViewerTextarea = document.getElementById('memo-viewer-textarea'); 
+        const viewingUserEmailDisplay = document.getElementById('viewing-user-email'); 
+
 
         // --- 状態管理 ---
-        let isAdminLoggedIn = false;
-        let currentUserId = null;
-
-        // --- UI 表示切り替え関数を統合 ---
-        const showSection = (sectionId) => {
-            ['admin-dashboard-container', 'auth-container', 'memo-container'].forEach(id => {
-                DOM[id.replace(/-/g, '')].style.display = (id === sectionId) ? 'block' : 'none';
-            });
-            // フォームのクリアは認証画面表示時のみ
-            if (sectionId === 'auth-container') {
-                DOM.emailInput.value = '';
-                DOM.passwordInput.value = '';
-            }
-        };
+        let isAdminLoggedIn = false; 
+        let currentUserId = null; 
 
         // --- イベントリスナーの追加 ---
         document.addEventListener('DOMContentLoaded', () => {
-            DOM.versionInfoElement.textContent = `Version: ${APP_VERSION}`;
+            // バージョン情報を表示
+            versionInfoElement.textContent = `Version: ${APP_VERSION}`;
 
-            DOM.loginForm.addEventListener('submit', (event) => {
-                event.preventDefault();
-                login();
+            // ログインフォームの submit イベントをリッスン
+            loginForm.addEventListener('submit', function(event) {
+                event.preventDefault(); // フォームのデフォルト送信（ページリロード）を防ぐ
+                login(); // login 関数を呼び出す
             });
 
             // ページロード時の初期表示ロジック
+            // 管理者ログイン状態のチェック (LocalStorageに基づく)
             if (localStorage.getItem('adminLoggedIn') === 'true') {
                 isAdminLoggedIn = true;
-                showSection('admin-dashboard-container');
-                loadUsers();
+                showAdminDashboard();
+                loadUsers(); 
             } else {
+                // 通常ユーザーログイン状態のチェック (LocalStorageに基づく)
                 const storedUserEmail = localStorage.getItem('loggedInUserEmail');
                 if (storedUserEmail) {
                     currentUserId = storedUserEmail;
-                    DOM.currentUserEmailDisplay.textContent = `ユーザー: ${storedUserEmail}`;
-                    showSection('memo-container');
-                    loadMemo(storedUserEmail);
+                    currentUserEmailDisplay.textContent = `ユーザー: ${storedUserEmail}`;
+                    showMemoPage();
+                    loadMemo(storedUserEmail); 
                 } else {
-                    showSection('auth-container');
+                    showAuthPage(); 
                 }
             }
         });
 
         // --- 管理者認証関連関数 ---
-        const logoutAdmin = () => {
+        function logoutAdmin() {
             isAdminLoggedIn = false;
             localStorage.removeItem('adminLoggedIn');
-            showSection('auth-container');
-            DOM.adminMessage.textContent = '';
-            DOM.usersTableBody.innerHTML = '';
-        };
+            showAuthPage(); // 管理者ログアウト後、通常ユーザーの認証画面へ
+            adminMessage.textContent = '';
+            usersTableBody.innerHTML = ''; // テーブルをクリア
+        }
 
         // --- ユーザー管理関連関数 (管理者ダッシュボード用) ---
-        const loadUsers = async () => {
-            if (!isAdminLoggedIn) {
-                DOM.adminMessage.textContent = '管理者としてログインしてください。';
+        async function loadUsers() {
+            if (!isAdminLoggedIn) { 
+                adminMessage.textContent = '管理者としてログインしてください。';
                 return;
             }
 
             try {
+                // 'users' コレクションから全てのユーザー情報を取得 (セキュリティルールが許可していれば)
                 const usersSnapshot = await db.collection('users').get();
-                let users = [];
+                let users = []; 
                 usersSnapshot.forEach(doc => {
-                    users.push({
-                        id: doc.id,
-                        email: doc.data().email,
-                        password: doc.data().password,
-                        isAdmin: doc.data().isAdmin || false
+                    const userData = doc.data();
+                    users.push({ 
+                        id: doc.id, 
+                        email: userData.email, 
+                        password: userData.password, 
+                        isAdmin: userData.isAdmin || false 
                     });
                 });
 
+                // 管理者（isAdmin: true）を優先してソート
                 users.sort((a, b) => {
                     if (a.isAdmin && !b.isAdmin) return -1;
                     if (!a.isAdmin && b.isAdmin) return 1;
-                    return a.email.localeCompare(b.email);
+                    // その他の場合はID（メールアドレス）でソート（任意）
+                    return a.email.localeCompare(b.email); 
                 });
 
                 renderUsersTable(users);
-                DOM.adminMessage.className = 'success-message';
-                DOM.adminMessage.textContent = 'ユーザー一覧を更新しました。';
+                adminMessage.className = 'success-message';
+                adminMessage.textContent = 'ユーザー一覧を更新しました。';
             } catch (error) {
-                DOM.adminMessage.className = 'message';
-                DOM.adminMessage.textContent = `ユーザー一覧の取得エラー: ${error.message}`;
+                adminMessage.className = 'message';
+                adminMessage.textContent = `ユーザー一覧の取得エラー: ${error.message}`; 
                 console.error("ユーザー一覧取得エラー:", error);
             }
-        };
+        }
 
-        const renderUsersTable = (users) => {
-            DOM.usersTableBody.innerHTML = '';
+        function renderUsersTable(users) {
+            usersTableBody.innerHTML = ''; 
             if (users.length === 0) {
-                DOM.usersTableBody.innerHTML = '<tr><td colspan="4">登録されているユーザーはいません。</td></tr>';
+                usersTableBody.innerHTML = '<tr><td colspan="4">登録されているユーザーはいません。</td></tr>'; 
                 return;
             }
             users.forEach(user => {
-                const row = DOM.usersTableBody.insertRow();
+                const row = usersTableBody.insertRow();
                 row.insertCell().textContent = user.email;
-                row.insertCell().textContent = user.password;
-                row.insertCell().textContent = user.isAdmin ? 'はい' : 'いいえ';
+                row.insertCell().textContent = user.password; 
+                row.insertCell().textContent = user.isAdmin ? 'はい' : 'いいえ'; 
                 const actionCell = row.insertCell();
 
+                // 閲覧ボタンの追加
                 const viewButton = document.createElement('button');
                 viewButton.textContent = '閲覧';
-                viewButton.className = 'view-button';
+                viewButton.className = 'view-button'; 
                 viewButton.onclick = () => viewUserMemo(user.email);
                 actionCell.appendChild(viewButton);
 
-                if (user.email !== currentUserId) {
+                // 削除ボタンの追加
+                if (user.email !== currentUserId) { 
                     const deleteButton = document.createElement('button');
                     deleteButton.textContent = '削除';
                     deleteButton.className = 'delete-button';
                     deleteButton.onclick = () => deleteUser(user.email);
                     actionCell.appendChild(deleteButton);
+                } else {
+                    // actionCell.textContent += ' (自身)'; 
                 }
             });
-        };
+        }
 
-        const viewUserMemo = async (email) => {
+        // ユーザーのメモ内容を閲覧する関数
+        async function viewUserMemo(email) {
             if (!isAdminLoggedIn) {
                 alert('管理者としてログインしてください。');
                 return;
             }
-
+            
             try {
                 const memoDoc = await db.collection('memos').doc(email).get();
-                DOM.memoViewerOverlay.style.display = 'flex';
-                DOM.viewingUserEmailDisplay.textContent = email;
-                DOM.memoViewerTextarea.value = memoDoc.exists ? memoDoc.data().content || '' : 'このユーザーのメモはありません。';
+                // ポップアップの表示
+                memoViewerOverlay.style.display = 'flex';
+                viewingUserEmailDisplay.textContent = email;
+                if (memoDoc.exists) {
+                    memoViewerTextarea.value = memoDoc.data().content || '';
+                } else {
+                    memoViewerTextarea.value = 'このユーザーのメモはありません。';
+                }
             } catch (error) {
                 alert('メモの読み込みに失敗しました。');
                 console.error("メモ閲覧エラー:", error);
             }
-        };
+        }
 
-        const closeMemoViewer = () => {
-            DOM.memoViewerOverlay.style.display = 'none';
-            DOM.memoViewerTextarea.value = '';
-            DOM.viewingUserEmailDisplay.textContent = '';
-        };
+        // メモ閲覧ポップアップを閉じる関数
+        function closeMemoViewer() {
+            memoViewerOverlay.style.display = 'none';
+            memoViewerTextarea.value = '';
+            viewingUserEmailDisplay.textContent = '';
+        }
 
-        const deleteUser = async (email) => {
-            if (!confirm(`本当にユーザー ${email} とそのメモを削除しますか？`)) return;
-            if (!isAdminLoggedIn) { DOM.adminMessage.textContent = '管理者としてログインしてください。'; return; }
+
+        async function deleteUser(email) {
+            if (!confirm(`本当にユーザー ${email} とそのメモを削除しますか？`)) {
+                return;
+            }
+
+            if (!isAdminLoggedIn) { 
+                adminMessage.textContent = '管理者としてログインしてください。';
+                return;
+            }
 
             try {
                 await db.collection('users').doc(email).delete();
                 await db.collection('memos').doc(email).delete();
-
-                DOM.adminMessage.className = 'success-message';
-                DOM.adminMessage.textContent = `ユーザー ${email} を削除しました。`;
-                loadUsers();
+                
+                adminMessage.className = 'success-message';
+                adminMessage.textContent = `ユーザー ${email} を削除しました。`;
+                loadUsers(); 
             } catch (error) {
-                DOM.adminMessage.className = 'message';
-                DOM.adminMessage.textContent = `ユーザー削除に失敗しました: ${error.message}`;
+                adminMessage.className = 'message';
+                adminMessage.textContent = `ユーザー削除に失敗しました: ${error.message}`;
                 console.error("ユーザー削除エラー:", error);
             }
-        };
+        }
 
         // --- 通常ユーザー認証関連関数（管理者ログイン兼用） ---
-        const signup = async () => {
-            const email = DOM.emailInput.value;
-            const password = DOM.passwordInput.value;
+        async function signup() {
+            const email = emailInput.value;
+            const password = passwordInput.value; 
 
             if (!email || !password) {
-                DOM.authMessage.className = 'message';
-                DOM.authMessage.textContent = 'IDとパスワードを入力してください。';
+                authMessage.className = 'message';
+                authMessage.textContent = 'IDとパスワードを入力してください。';
                 return;
             }
 
-            // 'admin'というIDは新規登録させない（コード内直書きの管理者IDと衝突するため）
-            if (email === "admin") {
-                DOM.authMessage.className = 'message';
-                DOM.authMessage.textContent = 'このIDは管理者用です。新規登録できません。';
+            // 'admin'というIDは新規登録させない
+            if (email === "admin") { 
+                authMessage.className = 'message';
+                authMessage.textContent = 'このIDは管理者用です。新規登録できません。';
                 return;
             }
 
             try {
                 const userDoc = await db.collection('users').doc(email).get();
                 if (userDoc.exists) {
-                    DOM.authMessage.className = 'message';
-                    DOM.authMessage.textContent = 'このIDは既に登録されています。';
+                    authMessage.className = 'message';
+                    authMessage.textContent = 'このIDは既に登録されています。';
                     return;
                 }
 
                 await db.collection('users').doc(email).set({
                     email: email,
-                    password: password,
-                    isAdmin: false
+                    password: password, // 平文で保存
+                    isAdmin: false // 新規登録時はデフォルトで管理者ではない
                 });
 
-                DOM.authMessage.className = 'success-message';
-                DOM.authMessage.textContent = '新規登録が完了しました。ログインしてください。';
+                authMessage.className = 'success-message';
+                authMessage.textContent = '新規登録が完了しました。ログインしてください。';
 
             } catch (error) {
-                DOM.authMessage.className = 'message';
-                DOM.authMessage.textContent = `新規登録エラー: ${error.message}`;
+                authMessage.className = 'message';
+                authMessage.textContent = `新規登録エラー: ${error.message}`;
                 console.error("サインアップエラー:", error);
             }
-        };
+        }
 
-        const login = async () => {
-            const email = DOM.emailInput.value;
-            const password = DOM.passwordInput.value;
+        async function login() {
+            const email = emailInput.value;
+            const password = passwordInput.value; 
 
             if (!email || !password) {
-                DOM.authMessage.className = 'message';
-                DOM.authMessage.textContent = 'IDとパスワードを入力してください。';
+                authMessage.className = 'message';
+                authMessage.textContent = 'IDとパスワードを入力してください。';
                 return;
             }
 
@@ -355,58 +471,59 @@
                 // Firestoreからユーザー情報を取得
                 const userDoc = await db.collection('users').doc(email).get();
 
+                // ユーザーが存在し、かつパスワードが一致するかチェック
                 if (userDoc.exists && userDoc.data().password === password) {
                     const userData = userDoc.data();
-
-                    if (userData.isAdmin) {
+                    
+                    if (userData.isAdmin) { // isAdminフラグがtrueなら管理者
                         isAdminLoggedIn = true;
-                        currentUserId = email;
+                        currentUserId = email; 
                         localStorage.setItem('adminLoggedIn', 'true');
-                        localStorage.setItem('loggedInUserEmail', email);
-                        DOM.authMessage.textContent = '';
-                        showSection('admin-dashboard-container');
-                        loadUsers();
-                        return;
+                        localStorage.setItem('loggedInUserEmail', email); 
+                        authMessage.textContent = ''; 
+                        showAdminDashboard();
+                        loadUsers(); 
+                        return; 
                     } else {
                         currentUserId = email;
                         localStorage.setItem('loggedInUserEmail', email);
-                        localStorage.removeItem('adminLoggedIn');
-                        DOM.currentUserEmailDisplay.textContent = `ユーザー: ${email}`;
-                        DOM.authMessage.textContent = '';
-                        showSection('memo-container');
+                        localStorage.removeItem('adminLoggedIn'); 
+                        currentUserEmailDisplay.textContent = `ユーザー: ${email}`;
+                        authMessage.textContent = ''; 
+                        showMemoPage();
                         loadMemo(email);
                     }
                 } else {
-                    DOM.authMessage.className = 'message';
-                    DOM.authMessage.textContent = 'IDまたはパスワードが間違っています。';
+                    authMessage.className = 'message';
+                    authMessage.textContent = 'IDまたはパスワードが間違っています。';
                 }
             } catch (error) {
-                DOM.authMessage.className = 'message';
-                DOM.authMessage.textContent = `ログインエラー: ${error.message}`;
+                authMessage.className = 'message';
+                authMessage.textContent = `ログインエラー: ${error.message}`;
                 console.error("ログインエラー:", error);
             }
-        };
+        }
 
-        const logout = () => {
+        function logout() { 
             currentUserId = null;
-            isAdminLoggedIn = false;
+            isAdminLoggedIn = false; 
             localStorage.removeItem('loggedInUserEmail');
-            localStorage.removeItem('adminLoggedIn');
+            localStorage.removeItem('adminLoggedIn'); 
 
-            showSection('auth-container');
-            DOM.memoContent.value = '';
-            DOM.currentUserEmailDisplay.textContent = '';
-            DOM.authMessage.textContent = '';
-            DOM.adminMessage.textContent = '';
-            DOM.usersTableBody.innerHTML = '';
-        };
+            showAuthPage();
+            memoContent.value = '';
+            currentUserEmailDisplay.textContent = '';
+            authMessage.textContent = '';
+            adminMessage.textContent = ''; 
+            usersTableBody.innerHTML = ''; 
+        }
 
-        const saveMemo = async () => {
-            if (!currentUserId || isAdminLoggedIn) {
-                DOM.authMessage.textContent = 'ユーザーとしてログインしてください。';
+        async function saveMemo() {
+            if (!currentUserId || isAdminLoggedIn) { 
+                authMessage.textContent = 'ユーザーとしてログインしてください。';
                 return;
             }
-            const memoText = DOM.memoContent.value;
+            const memoText = memoContent.value;
             try {
                 await db.collection('memos').doc(currentUserId).set({
                     content: memoText,
@@ -414,23 +531,48 @@
                 });
                 alert('メモを保存しました！');
             } catch (error) {
-                alert('メモの保存に失敗しました。');
+                    alert('メモの保存に失敗しました。');
                 console.error("メモ保存エラー:", error);
             }
-        };
+        }
 
-        const loadMemo = async (userId) => {
-            if (!userId || isAdminLoggedIn) {
+        async function loadMemo(userId) {
+            if (!userId || isAdminLoggedIn) { 
                 return;
             }
             try {
                 const doc = await db.collection('memos').doc(userId).get();
-                DOM.memoContent.value = doc.exists ? doc.data().content || '' : '';
+                if (doc.exists) {
+                    memoContent.value = doc.data().content || '';
+                } else {
+                    memoContent.value = '';
+                }
             } catch (error) {
                 console.error("メモ読み込みエラー:", error);
-                DOM.memoContent.value = 'メモの読み込みに失敗しました。';
+                memoContent.value = 'メモの読み込みに失敗しました。';
             }
-        };
+        }
+
+        // --- UI 表示切り替え関数 ---
+        function showAdminDashboard() {
+            authContainer.style.display = 'none';      
+            memoContainer.style.display = 'none';      
+            adminDashboardContainer.style.display = 'block'; 
+        }
+
+        function showAuthPage() { 
+            authContainer.style.display = 'block';
+            memoContainer.style.display = 'none';
+            adminDashboardContainer.style.display = 'none'; 
+            emailInput.value = ''; 
+            passwordInput.value = ''; 
+        }
+
+        function showMemoPage() { 
+            authContainer.style.display = 'none';
+            memoContainer.style.display = 'block';
+            adminDashboardContainer.style.display = 'none'; 
+        }
     </script>
 </body>
 </html>
