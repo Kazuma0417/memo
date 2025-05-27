@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WEBメモ帳 (管理者ページ付き - 危険なテスト用)</title>
+    <title>WEBメモ帳 (管理者兼用ログイン - 危険なテスト用)</title>
     <style>
         body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; margin-top: 20px; }
         .container { background-color: #f0f0f0; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); margin-bottom: 20px; width: 80%; max-width: 800px; }
@@ -27,22 +27,9 @@
 </head>
 <body>
 
-    <div id="admin-login-container" class="container">
-        <h2>管理者ログイン</h2>
-        <div class="auth-form">
-            <input type="text" id="admin-username" placeholder="管理者ユーザー名" required><br>
-            <input type="password" id="admin-password" placeholder="管理者パスワード" required><br>
-            <button onclick="adminLogin()">ログイン</button>
-            <p id="admin-login-message" class="message"></p>
-        </div>
-        <hr class="section-separator">
-        <p>管理者としてログインすると、ユーザーの作成・ログイン機能は隠されます。</p>
-        <p>管理者ログアウト後、ユーザー機能が表示されます。</p>
-    </div>
-
     <div id="admin-dashboard-container" class="container" style="display: none;">
         <div class="header-controls">
-            <h2>ユーザー管理ダッシュボード</h2>
+            <h2>管理者ダッシュボード</h2>
             <button onclick="logoutAdmin()">管理者ログアウト</button>
         </div>
         <button onclick="loadUsers()" style="margin-bottom: 10px;">ユーザー一覧を更新</button>
@@ -65,7 +52,7 @@
     <hr class="section-separator">
 
     <div id="auth-container" class="container">
-        <h2>ユーザーログイン / 新規登録</h2>
+        <h2>ログイン / 新規登録</h2>
         <div class="auth-form">
             <input type="email" id="email" placeholder="メールアドレス" required><br>
             <input type="password" id="password" placeholder="パスワード" required><br>
@@ -99,8 +86,8 @@
 
         // !!! 警告: これらの値はウェブサイトのソースコードを閲覧できる人には誰でも見えてしまいます。 !!!
         // !!! 非常に大きなセキュリティリスクがあるため、本番環境での使用は絶対に避けてください。  !!!
-        const ADMIN_USERNAME = 'admin';       // 管理者ユーザー名
-        const ADMIN_PASSWORD = 'supersecret'; // 管理者パスワード
+        const ADMIN_EMAIL = 'admin@example.com'; // 管理者用のメールアドレス
+        const ADMIN_PASSWORD = 'supersecret';    // 管理者用のパスワード
         // -----------------------------------------------------------------------------------------
 
         // Firebase の初期化
@@ -109,15 +96,11 @@
 
         // --- DOM 要素の取得 ---
         // 管理者セクション
-        const adminLoginContainer = document.getElementById('admin-login-container');
         const adminDashboardContainer = document.getElementById('admin-dashboard-container');
-        const adminUsernameInput = document.getElementById('admin-username');
-        const adminPasswordInput = document.getElementById('admin-password');
-        const adminLoginMessage = document.getElementById('admin-login-message');
         const adminMessage = document.getElementById('admin-message');
         const usersTableBody = document.querySelector('#users-table tbody');
 
-        // 通常ユーザーセクション
+        // 通常ユーザーセクション（管理者ログイン兼用）
         const authContainer = document.getElementById('auth-container');
         const memoContainer = document.getElementById('memo-container');
         const emailInput = document.getElementById('email');
@@ -138,7 +121,7 @@
                 showAdminDashboard();
                 loadUsers(); // 管理者ダッシュボード表示時にユーザー一覧をロード
             } else {
-                // 通常ユーザーログイン状態のチェック（管理者ログインとは独立）
+                // 通常ユーザーログイン状態のチェック
                 const storedUserEmail = localStorage.getItem('loggedInUserEmail');
                 if (storedUserEmail) {
                     currentUserId = storedUserEmail;
@@ -152,27 +135,7 @@
         });
 
         // --- 管理者認証関連関数 ---
-        async function adminLogin() {
-            const username = adminUsernameInput.value;
-            const password = adminPasswordInput.value;
-
-            if (!username || !password) {
-                adminLoginMessage.textContent = 'ユーザー名とパスワードを入力してください。';
-                return;
-            }
-
-            // ハードコードされた管理者情報との比較 (本番では絶対に行わない)
-            if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-                isAdminLoggedIn = true;
-                localStorage.setItem('adminLoggedIn', 'true'); // ログイン状態をLocalStorageに保存
-                showAdminDashboard();
-                loadUsers(); // ログイン成功時にユーザー一覧をロード
-                adminLoginMessage.textContent = ''; // メッセージをクリア
-            } else {
-                adminLoginMessage.textContent = '管理者ユーザー名またはパスワードが間違っています。';
-            }
-        }
-
+        // 管理者用のログインは通常のlogin関数内で処理されるため、adminLogin関数は不要になる
         function logoutAdmin() {
             isAdminLoggedIn = false;
             localStorage.removeItem('adminLoggedIn');
@@ -185,7 +148,7 @@
         async function loadUsers() {
             if (!isAdminLoggedIn) {
                 adminMessage.textContent = '管理者としてログインしてください。';
-                showAdminLoginPage();
+                // showAuthPage(); // この場合は常に認証ページから来るので不要
                 return;
             }
 
@@ -232,14 +195,12 @@
 
             if (!isAdminLoggedIn) {
                 adminMessage.textContent = '管理者としてログインしてください。';
-                showAdminLoginPage();
+                // showAuthPage(); // この場合は常に認証ページから来るので不要
                 return;
             }
 
             try {
-                // users コレクションからユーザーのドキュメントを削除
                 await db.collection('users').doc(email).delete();
-                // memos コレクションからそのユーザーのメモドキュメントも削除
                 await db.collection('memos').doc(email).delete();
                 
                 adminMessage.className = 'success-message';
@@ -252,13 +213,20 @@
             }
         }
 
-        // --- 通常ユーザー認証関連関数（前回と同じ） ---
+        // --- 通常ユーザー認証関連関数（管理者ログイン兼用） ---
         async function signup() {
             const email = emailInput.value;
             const password = passwordInput.value;
             if (!email || !password) {
                 authMessage.className = 'message';
                 authMessage.textContent = 'メールアドレスとパスワードを入力してください。';
+                return;
+            }
+
+            // 管理者メールアドレスでは新規登録させない（衝突回避）
+            if (email === ADMIN_EMAIL) {
+                authMessage.className = 'message';
+                authMessage.textContent = 'このメールアドレスは管理者用です。新規登録できません。';
                 return;
             }
 
@@ -294,6 +262,17 @@
                 return;
             }
 
+            // === 管理者ログインの判定 ===
+            if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+                isAdminLoggedIn = true;
+                localStorage.setItem('adminLoggedIn', 'true');
+                authMessage.textContent = ''; // メッセージをクリア
+                showAdminDashboard();
+                loadUsers(); // 管理者ダッシュボード表示時にユーザー一覧をロード
+                return; // 管理者としてログインしたのでここで処理を終了
+            }
+
+            // === 通常ユーザーログインの判定 ===
             try {
                 const userDoc = await db.collection('users').doc(email).get();
 
@@ -301,9 +280,9 @@
                     currentUserId = email;
                     localStorage.setItem('loggedInUserEmail', email);
                     currentUserEmailDisplay.textContent = `ユーザー: ${email}`;
+                    authMessage.textContent = ''; // 成功時はメッセージをクリア
                     showMemoPage();
                     loadMemo(email);
-                    authMessage.textContent = '';
                 } else {
                     authMessage.className = 'message';
                     authMessage.textContent = 'メールアドレスまたはパスワードが間違っています。';
@@ -358,35 +337,23 @@
 
         // --- UI 表示切り替え関数 ---
         function showAdminDashboard() {
-            adminLoginContainer.style.display = 'none';
-            adminDashboardContainer.style.display = 'block';
-            authContainer.style.display = 'none'; // 通常ユーザーセクションを隠す
-            memoContainer.style.display = 'none';
+            authContainer.style.display = 'none';      // 通常ユーザー認証セクションを隠す
+            memoContainer.style.display = 'none';      // 通常メモ帳セクションを隠す
+            adminDashboardContainer.style.display = 'block'; // 管理者ダッシュボードを表示
         }
 
-        function showAdminLoginPage() {
-            adminLoginContainer.style.display = 'block';
-            adminDashboardContainer.style.display = 'none';
-            authContainer.style.display = 'none'; // 通常ユーザーセクションを隠す
-            memoContainer.style.display = 'none';
-            adminUsernameInput.value = '';
-            adminPasswordInput.value = '';
-        }
-
-        function showMemoPage() {
-            authContainer.style.display = 'none';
-            memoContainer.style.display = 'block';
-            adminLoginContainer.style.display = 'none'; // 管理者セクションを隠す
-            adminDashboardContainer.style.display = 'none';
-        }
-
-        function showAuthPage() {
+        function showAuthPage() { // ユーザー認証画面を表示 (管理者ログイン兼用)
             authContainer.style.display = 'block';
             memoContainer.style.display = 'none';
-            adminLoginContainer.style.display = 'none'; // 管理者セクションを隠す
-            adminDashboardContainer.style.display = 'none';
-            emailInput.value = '';
-            passwordInput.value = '';
+            adminDashboardContainer.style.display = 'none'; // 管理者ダッシュボードを隠す
+            emailInput.value = ''; // 入力フィールドをクリア
+            passwordInput.value = ''; // 入力フィールドをクリア
+        }
+
+        function showMemoPage() { // 通常ユーザーのメモ帳画面を表示
+            authContainer.style.display = 'none';
+            memoContainer.style.display = 'block';
+            adminDashboardContainer.style.display = 'none'; // 管理者ダッシュボードを隠す
         }
     </script>
 </body>
