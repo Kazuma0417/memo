@@ -88,7 +88,7 @@
 
     <script>
         // ★★★ ここにバージョン番号を書き込んでください ★★★
-        const APP_VERSION = 'v5000'; 
+        const APP_VERSION = 'v200'; 
 
         // --- Firebase設定（Firebase コンソールからコピーしたもの） ---
         const firebaseConfig = {
@@ -167,7 +167,7 @@
 
         // --- ユーザー管理関連関数 (管理者ダッシュボード用) ---
         async function loadUsers() {
-            if (!isAdminLoggedIn) { 
+            if (!isAdminLoggedIn) { // 管理者としてログインしているか確認
                 adminMessage.textContent = '管理者としてログインしてください。';
                 return;
             }
@@ -221,7 +221,7 @@
         }
 
         async function deleteUser(email) {
-            if (!confirm(`本当にユーザー ${email} とそのメモを削除しますか？`)) {
+            if (!confirm(`本当にユーザー ${email} とそのメモを削除しますか？``)) {
                 return;
             }
 
@@ -258,11 +258,19 @@
             }
 
             // 管理者ID ('admin') では新規登録させない（衝突回避）
-            if (email === ADMIN_EMAIL) { // ADMIN_EMAIL はコード内直書きの管理者ID
+            // 注意: ADMIN_EMAIL はコード内に定義されていないため、このチェックは削除するか、
+            // もし特定のIDで新規登録させたくない場合は、そのIDを別途定義する必要があります。
+            // 今回は、ADMIN_EMAIL はコード内に直書きされていないので、このチェックは機能しません。
+            // データベースに 'admin' というisAdmin:trueのユーザーを登録する場合は、
+            // そのIDでの新規登録を許可する必要があります。
+            // もし 'admin' というIDを予約したいなら、その文字列を別途定数として定義してください。
+            /*
+            if (email === "admin") { // 例: 'admin'というIDを予約する場合
                 authMessage.className = 'message';
                 authMessage.textContent = 'このIDは管理者用です。新規登録できません。';
                 return;
             }
+            */
 
             try {
                 // 既存ユーザーのチェック
@@ -301,24 +309,14 @@
             }
 
             try {
-                // 管理者IDのチェックを先に行う (コードに直書きされた管理者ID/パスワード)
-                if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-                    isAdminLoggedIn = true;
-                    currentUserId = ADMIN_EMAIL; 
-                    localStorage.setItem('adminLoggedIn', 'true');
-                    localStorage.setItem('loggedInUserEmail', ADMIN_EMAIL); 
-                    authMessage.textContent = ''; 
-                    showAdminDashboard();
-                    loadUsers(); 
-                    return; 
-                }
-
                 // Firestoreからユーザー情報を取得
                 const userDoc = await db.collection('users').doc(email).get();
 
+                // ユーザーが存在し、かつパスワードが一致するかチェック
                 if (userDoc.exists && userDoc.data().password === password) {
                     const userData = userDoc.data();
                     
+                    // isAdminフラグがtrueなら管理者（DBに保存された管理者ID/パスワード）
                     if (userData.isAdmin) { 
                         isAdminLoggedIn = true;
                         currentUserId = email; 
@@ -329,6 +327,7 @@
                         loadUsers(); 
                         return; 
                     } else {
+                        // 通常ユーザーとしてログイン
                         currentUserId = email;
                         localStorage.setItem('loggedInUserEmail', email);
                         localStorage.removeItem('adminLoggedIn'); 
