@@ -7,7 +7,7 @@
         body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; margin-top: 20px; }
         .container { background-color: #f0f0f0; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); margin-bottom: 20px; width: 80%; max-width: 800px; }
         .auth-form input { margin-bottom: 10px; padding: 8px; width: calc(100% - 16px); box-sizing: border-box; }
-        textarea { width: 100%; height: 200px; margin-bottom: 10px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        textarea { width: 100%; height: 200px; margin-bottom: 10px; padding: 10px; border: 1px solid #ccc; border-radius: 44px; box-sizing: border-box; } /* typo: 44px should be 4px */
         button { padding: 8px 12px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 5px; }
         button:hover { background-color: #0056b3; }
         .delete-button { background-color: #dc3545; }
@@ -88,7 +88,7 @@
 
     <script>
         // ★★★ ここにバージョン番号を書き込んでください ★★★
-        const APP_VERSION = 'v1.5'; 
+        const APP_VERSION = 'v500'; 
 
         // --- Firebase設定（Firebase コンソールからコピーしたもの） ---
         const firebaseConfig = {
@@ -119,6 +119,11 @@
         const currentUserEmailDisplay = document.getElementById('current-user-email');
         const loginForm = document.getElementById('login-form'); 
         const versionInfoElement = document.getElementById('version-info');
+
+        // ★メモ閲覧用のポップアップ要素も取得★
+        const memoViewerOverlay = document.getElementById('memo-viewer-overlay'); 
+        const memoViewerTextarea = document.getElementById('memo-viewer-textarea'); 
+        const viewingUserEmailDisplay = document.getElementById('viewing-user-email'); 
 
 
         // --- 状態管理 ---
@@ -220,7 +225,7 @@
                 // 閲覧ボタンの追加
                 const viewButton = document.createElement('button');
                 viewButton.textContent = '閲覧';
-                viewButton.className = 'view-button';
+                viewButton.className = 'view-button'; // ここが赤色に変更される
                 viewButton.onclick = () => viewUserMemo(user.email);
                 actionCell.appendChild(viewButton);
 
@@ -232,7 +237,7 @@
                     deleteButton.onclick = () => deleteUser(user.email);
                     actionCell.appendChild(deleteButton);
                 } else {
-                    // actionCell.textContent += ' (自身)'; // 閲覧ボタンの後に追加
+                    // actionCell.textContent += ' (自身)'; 
                 }
             });
         }
@@ -247,12 +252,12 @@
             try {
                 const memoDoc = await db.collection('memos').doc(email).get();
                 // ポップアップの表示
-                document.getElementById('memo-viewer-overlay').style.display = 'flex';
-                document.getElementById('viewing-user-email').textContent = email;
+                memoViewerOverlay.style.display = 'flex';
+                viewingUserEmailDisplay.textContent = email;
                 if (memoDoc.exists) {
-                    document.getElementById('memo-viewer-textarea').value = memoDoc.data().content || '';
+                    memoViewerTextarea.value = memoDoc.data().content || '';
                 } else {
-                    document.getElementById('memo-viewer-textarea').value = 'このユーザーのメモはありません。';
+                    memoViewerTextarea.value = 'このユーザーのメモはありません。';
                 }
             } catch (error) {
                 alert('メモの読み込みに失敗しました。');
@@ -262,9 +267,9 @@
 
         // メモ閲覧ポップアップを閉じる関数
         function closeMemoViewer() {
-            document.getElementById('memo-viewer-overlay').style.display = 'none';
-            document.getElementById('memo-viewer-textarea').value = '';
-            document.getElementById('viewing-user-email').textContent = '';
+            memoViewerOverlay.style.display = 'none';
+            memoViewerTextarea.value = '';
+            viewingUserEmailDisplay.textContent = '';
         }
 
 
@@ -304,7 +309,7 @@
             }
 
             // 'admin'というIDは新規登録させない（コード内直書きの管理者IDと衝突するため）
-            if (email === "admin") { // 管理者用ID 'admin'を直接参照
+            if (email === "admin") { 
                 authMessage.className = 'message';
                 authMessage.textContent = 'このIDは管理者用です。新規登録できません。';
                 return;
@@ -320,8 +325,8 @@
 
                 await db.collection('users').doc(email).set({
                     email: email,
-                    password: password, // 平文で保存
-                    isAdmin: false // 新規登録時はデフォルトで管理者ではない
+                    password: password, 
+                    isAdmin: false 
                 });
 
                 authMessage.className = 'success-message';
@@ -346,7 +351,7 @@
 
             try {
                 // 管理者IDのチェックを先に行う (コードに直書きされた管理者ID/パスワード)
-                if (email === 'admin' && password === 'password') { // ★管理者ID/パスワードの直書き判定★
+                if (email === 'admin' && password === 'password') { 
                     isAdminLoggedIn = true;
                     currentUserId = 'admin'; 
                     localStorage.setItem('adminLoggedIn', 'true');
@@ -364,7 +369,7 @@
                 if (userDoc.exists && userDoc.data().password === password) {
                     const userData = userDoc.data();
                     
-                    if (userData.isAdmin) { // isAdminフラグがtrueなら管理者（DBに保存された管理者ID/パスワード）
+                    if (userData.isAdmin) { 
                         isAdminLoggedIn = true;
                         currentUserId = email; 
                         localStorage.setItem('adminLoggedIn', 'true');
