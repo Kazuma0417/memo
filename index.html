@@ -55,11 +55,13 @@
     <div id="auth-container" class="container">
         <h2>ログイン / 新規登録</h2>
         <form id="login-form" class="auth-form"> 
-            <input type="email" id="email" placeholder="メールアドレス" required><br>
+            <input type="text" id="email" placeholder="ID" required><br> 
             <input type="password" id="password" placeholder="パスワード" required><br>
-            <button type="button" onclick="signup()">新規登録</button> <button type="submit">ログイン</button> <p id="auth-message" class="message"></p>
+            <button type="button" onclick="signup()">新規登録</button>
+            <button type="submit">ログイン</button>
+            <p id="auth-message" class="message"></p>
         </form>
-        </div>
+    </div>
 
     <div id="memo-container" class="container" style="display: none;">
         <div class="header-controls">
@@ -104,14 +106,13 @@
         const authMessage = document.getElementById('auth-message');
         const memoContent = document.getElementById('memo-content');
         const currentUserEmailDisplay = document.getElementById('current-user-email');
-        const loginForm = document.getElementById('login-form'); // ★新しくフォーム要素を取得★
+        const loginForm = document.getElementById('login-form'); 
 
         // --- 状態管理 ---
         let isAdminLoggedIn = false; // 管理者ログイン状態
         let currentUserId = null; // 現在ログイン中のユーザーID（メールアドレス）
 
         // --- イベントリスナーの追加 ---
-        // ★DOMContentLoaded でフォームの submit イベントをリッスンする★
         document.addEventListener('DOMContentLoaded', () => {
             // ログインフォームの submit イベントをリッスン
             loginForm.addEventListener('submit', function(event) {
@@ -239,6 +240,13 @@
                 return;
             }
 
+            // 管理者ID ('admin') では新規登録させない（衝突回避）
+            if (email === ADMIN_EMAIL) {
+                authMessage.className = 'message';
+                authMessage.textContent = 'このIDは管理者用です。新規登録できません。';
+                return;
+            }
+
             try {
                 // 既存ユーザーのチェック
                 const userDoc = await db.collection('users').doc(email).get();
@@ -276,6 +284,18 @@
             }
 
             try {
+                // 管理者IDのチェックを先に行う
+                if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+                    isAdminLoggedIn = true;
+                    currentUserId = ADMIN_EMAIL; 
+                    localStorage.setItem('adminLoggedIn', 'true');
+                    localStorage.setItem('loggedInUserEmail', ADMIN_EMAIL); 
+                    authMessage.textContent = ''; 
+                    showAdminDashboard();
+                    loadUsers(); 
+                    return; // 管理者としてログインしたのでここで処理を終了
+                }
+
                 // Firestoreからユーザー情報を取得
                 const userDoc = await db.collection('users').doc(email).get();
 
@@ -283,12 +303,12 @@
                 if (userDoc.exists && userDoc.data().password === password) {
                     const userData = userDoc.data();
                     
-                    // 管理者としてログインするかの判定
-                    if (userData.isAdmin) { // isAdminフラグがtrueなら管理者
+                    // isAdminフラグがtrueなら管理者（コード内直書きのadminはここを通らない）
+                    if (userData.isAdmin) { 
                         isAdminLoggedIn = true;
-                        currentUserId = email; // 管理者のIDも currentUserId に設定
+                        currentUserId = email; 
                         localStorage.setItem('adminLoggedIn', 'true');
-                        localStorage.setItem('loggedInUserEmail', email); // 管理者もユーザーの一種としてLocalStorageに保存
+                        localStorage.setItem('loggedInUserEmail', email); 
                         authMessage.textContent = ''; 
                         showAdminDashboard();
                         loadUsers(); 
@@ -297,7 +317,7 @@
                         // 通常ユーザーとしてログイン
                         currentUserId = email;
                         localStorage.setItem('loggedInUserEmail', email);
-                        localStorage.removeItem('adminLoggedIn'); // ユーザーとしてログインしたので管理者フラグはクリア
+                        localStorage.removeItem('adminLoggedIn'); 
                         currentUserEmailDisplay.textContent = `ユーザー: ${email}`;
                         authMessage.textContent = ''; 
                         showMemoPage();
@@ -314,11 +334,11 @@
             }
         }
 
-        function logout() { // ユーザー・管理者共通のログアウト
+        function logout() { 
             currentUserId = null;
-            isAdminLoggedIn = false; // 管理者フラグもリセット
+            isAdminLoggedIn = false; 
             localStorage.removeItem('loggedInUserEmail');
-            localStorage.removeItem('adminLoggedIn'); // 管理者ログイン状態もクリア
+            localStorage.removeItem('adminLoggedIn'); 
 
             showAuthPage();
             memoContent.value = '';
@@ -329,7 +349,7 @@
         }
 
         async function saveMemo() {
-            if (!currentUserId || isAdminLoggedIn) { // 管理者はメモを保存しない
+            if (!currentUserId || isAdminLoggedIn) { 
                 authMessage.textContent = 'ユーザーとしてログインしてください。';
                 return;
             }
@@ -347,7 +367,7 @@
         }
 
         async function loadMemo(userId) {
-            if (!userId || isAdminLoggedIn) { // 管理者はメモを読み込まない
+            if (!userId || isAdminLoggedIn) { 
                 return;
             }
             try {
