@@ -104,7 +104,7 @@
         const authContainer = document.getElementById('auth-container');
         const memoContainer = document.getElementById('memo-container');
         const emailInput = document.getElementById('email');
-        const passwordInput = document.getElementById('password');
+        const passwordInput = document.getElementById('password'); // passwordInput を正しく取得
         const authMessage = document.getElementById('auth-message');
         const memoContent = document.getElementById('memo-content');
         const currentUserEmailDisplay = document.getElementById('current-user-email');
@@ -216,14 +216,15 @@
         // --- 通常ユーザー認証関連関数（管理者ログイン兼用） ---
         async function signup() {
             const email = emailInput.value;
-            const password = passwordInput.value;
+            const password = passwordInput.value; // ここはpasswordInput.valueで正しい
+
             if (!email || !password) {
                 authMessage.className = 'message';
-                authMessage.textContent = 'メールアドレスとパスワードを入力してください。';
+                authMessage.textContent = 'IDとパスワードを入力してください。';
                 return;
             }
 
-            // 管理者メールアドレスでは新規登録させない（衝突回避）
+            // 管理者IDでは新規登録させない（衝突回避）
             if (email === ADMIN_EMAIL) {
                 authMessage.className = 'message';
                 authMessage.textContent = 'このIDは管理者用です。新規登録できません。';
@@ -255,7 +256,7 @@
 
         async function login() {
             const email = emailInput.value;
-            const password = password.value; // ここを修正しました
+            const password = passwordInput.value; // ★ここを修正しました★
 
             if (!email || !password) {
                 authMessage.className = 'message';
