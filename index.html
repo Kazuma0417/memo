@@ -5,93 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WEBメモ帳</title>
     <style>
-        body {
-            font-family: sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-top: 20px;
-        }
-        .container {
-            background-color: #f0f0f0;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-            width: 80%;
-            max-width: 800px;
-        }
-        .auth-form input {
-            margin-bottom: 10px;
-            padding: 8px;
-            width: calc(100% - 16px);
-            box-sizing: border-box;
-        }
-        textarea {
-            width: 100%;
-            height: 200px;
-            margin-bottom: 10px;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px; /* ここは4pxで正しいです */
-            box-sizing: border-box;
-        }
-        button {
-            padding: 8px 12px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-right: 5px;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-        .delete-button {
-            background-color: #dc3545;
-        }
-        .delete-button:hover {
-            background-color: #c82333;
-        }
-        /* 閲覧ボタンの色を削除ボタンと同じ赤色 */
-        .view-button {
-            background-color: #dc3545;
-        }
-        .view-button:hover {
-            background-color: #c82333;
-        }
-        .message {
-            color: red;
-            margin-top: 10px;
-        }
-        .success-message {
-            color: green;
-            margin-top: 10px;
-        }
-        .header-controls {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
-            margin-bottom: 10px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-        th, td {
-            border: 1px solid #ccc;
-            padding: 8px;
-            text-align: left;
-            word-break: break-all;
-        }
-        .section-separator {
-            margin: 40px 0;
-            border: none;
-            border-top: 1px solid #eee;
-        }
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; margin-top: 20px; }
+        .container { background-color: #f0f0f0; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); margin-bottom: 20px; width: 80%; max-width: 800px; }
+        .auth-form input { margin-bottom: 10px; padding: 8px; width: calc(100% - 16px); box-sizing: border-box; }
+        textarea { width: 100%; height: 200px; margin-bottom: 10px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { padding: 8px 12px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 5px; }
+        button:hover { background-color: #0056b3; }
+        .delete-button { background-color: #dc3545; }
+        .delete-button:hover { background-color: #c82333; }
+        /* 閲覧ボタンの色を緑色に修正 */
+        .view-button { background-color: #28a745; } 
+        .view-button:hover { background-color: #218838; }
+        .message { color: red; margin-top: 10px; }
+        .success-message { color: green; margin-top: 10px; }
+        .header-controls { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; word-break: break-all; }
+        .section-separator { margin: 40px 0; border: none; border-top: 1px solid #eee; }
 
         /* バージョン表示用のスタイル */
         #version-info {
@@ -207,7 +137,7 @@
 
     <script>
         // ★★★ ここにバージョン番号を書き込んでください ★★★
-        const APP_VERSION = 'v1.0.0'; 
+        const APP_VERSION = 'v1.0.5'; 
 
         // --- Firebase設定（Firebase コンソールからコピーしたもの） ---
         const firebaseConfig = {
