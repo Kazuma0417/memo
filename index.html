@@ -88,7 +88,7 @@
 
     <script>
         // ★★★ ここにバージョン番号を書き込んでください ★★★
-        const APP_VERSION = 'v200'; 
+        const APP_VERSION = 'v350'; 
 
         // --- Firebase設定（Firebase コンソールからコピーしたもの） ---
         const firebaseConfig = {
@@ -190,7 +190,7 @@
                 adminMessage.textContent = 'ユーザー一覧を更新しました。';
             } catch (error) {
                 adminMessage.className = 'message';
-                adminMessage.textContent = `ユーザー一覧の取得エラー: ${error.message}`;
+                authMessage.textContent = `ユーザー一覧の取得エラー: ${error.message}`; // エラーメッセージを修正
                 console.error("ユーザー一覧取得エラー:", error);
             }
         }
@@ -221,7 +221,7 @@
         }
 
         async function deleteUser(email) {
-            if (!confirm(`本当にユーザー ${email} とそのメモを削除しますか？``)) {
+            if (!confirm(`本当にユーザー ${email} とそのメモを削除しますか？`)) {
                 return;
             }
 
@@ -258,9 +258,7 @@
             }
 
             // 管理者ID ('admin') では新規登録させない（衝突回避）
-            // 注意: ADMIN_EMAIL はコード内に定義されていないため、このチェックは削除するか、
-            // もし特定のIDで新規登録させたくない場合は、そのIDを別途定義する必要があります。
-            // 今回は、ADMIN_EMAIL はコード内に直書きされていないので、このチェックは機能しません。
+            // 注意: ADMIN_EMAIL はコード内に定義されていないため、このチェックは機能しません。
             // データベースに 'admin' というisAdmin:trueのユーザーを登録する場合は、
             // そのIDでの新規登録を許可する必要があります。
             // もし 'admin' というIDを予約したいなら、その文字列を別途定数として定義してください。
@@ -300,7 +298,7 @@
 
         async function login() {
             const email = emailInput.value;
-            const password = passwordInput.value; 
+            const password = passwordInput.value; // ★ここを修正しました (passwordInput.value が正しい) ★
 
             if (!email || !password) {
                 authMessage.className = 'message';
@@ -316,7 +314,7 @@
                 if (userDoc.exists && userDoc.data().password === password) {
                     const userData = userDoc.data();
                     
-                    // isAdminフラグがtrueなら管理者（DBに保存された管理者ID/パスワード）
+                    // isAdminフラグがtrueなら管理者
                     if (userData.isAdmin) { 
                         isAdminLoggedIn = true;
                         currentUserId = email; 
