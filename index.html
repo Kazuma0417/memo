@@ -11,8 +11,11 @@
         textarea { width: 100%; height: 200px; margin-bottom: 10px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
         button { padding: 8px 12px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 5px; }
         button:hover { background-color: #0056b3; }
-        .delete-button, .view-button { background-color: #dc3545; } /* 削除と閲覧ボタンは赤色 */
-        .delete-button:hover, .view-button:hover { background-color: #c82333; }
+        .delete-button { background-color: #dc3545; }
+        .delete-button:hover { background-color: #c82333; }
+        /* 閲覧ボタンの色を緑色に修正 */
+        .view-button { background-color: #28a745; } 
+        .view-button:hover { background-color: #218838; }
         .message { color: red; margin-top: 10px; }
         .success-message { color: green; margin-top: 10px; }
         .header-controls { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 10px; }
@@ -22,38 +25,63 @@
 
         /* バージョン表示用のスタイル */
         #version-info {
-            position: fixed; bottom: 10px; right: 10px;
-            font-size: 0.8em; color: #888; background-color: rgba(255, 255, 255, 0.7);
-            padding: 5px 10px; border-radius: 5px; z-index: 1000;
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            font-size: 0.8em;
+            color: #888;
+            background-color: rgba(255, 255, 255, 0.7);
+            padding: 5px 10px;
+            border-radius: 5px;
+            z-index: 1000;
         }
 
         /* メモ閲覧ポップアップのスタイル (簡易的なもの) */
         #memo-viewer-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0, 0, 0, 0.5); display: flex;
-            justify-content: center; align-items: center; z-index: 2000;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
         }
         #memo-viewer-content {
-            background-color: white; padding: 20px; border-radius: 8px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.2); width: 90%; max-width: 600px;
-            max-height: 80vh; overflow-y: auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.2);
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
         }
         #memo-viewer-content textarea {
-            width: 100%; height: 300px; border: 1px solid #ccc;
-            padding: 10px; box-sizing: border-box; resize: vertical;
+            width: 100%;
+            height: 300px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            box-sizing: border-box;
+            resize: vertical;
         }
-        #memo-viewer-content button { margin-top: 10px; float: right; }
+        #memo-viewer-content button {
+            margin-top: 10px;
+            float: right;
+        }
     </style>
-
+    
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+
 </head>
 <body>
 
     <div id="admin-dashboard-container" class="container" style="display: none;">
         <div class="header-controls">
-            <h2>管理者ダッシュボード (フルアクセス)</h2>
-            <button onclick="logoutAdmin()">管理者ログアウト</button>
+            <h2>管理者ダッシュボード</h2> <button onclick="logoutAdmin()">管理者ログアウト</button>
         </div>
         <button onclick="loadUsers()" style="margin-bottom: 10px;">ユーザー一覧を更新</button>
         <p id="admin-message" class="message"></p>
@@ -64,7 +92,8 @@
                 <tr>
                     <th>ID (メールアドレス)</th>
                     <th>パスワード (平文)</th>
-                    <th>役割</th> <th>操作</th>
+                    <th>役割</th>
+                    <th>操作</th>
                 </tr>
             </thead>
             <tbody></tbody>
@@ -73,8 +102,7 @@
 
     <div id="sub-admin-dashboard-container" class="container" style="display: none;">
         <div class="header-controls">
-            <h2>サブ管理者ダッシュボード (削除のみ)</h2>
-            <button onclick="logoutAdmin()">サブ管理者ログアウト</button>
+            <h2>ダッシュボード</h2> <button onclick="logoutAdmin()">サブ管理者ログアウト</button>
         </div>
         <button onclick="loadUsers()" style="margin-bottom: 10px;">ユーザー一覧を更新</button>
         <p id="sub-admin-message" class="message"></p>
@@ -84,13 +112,13 @@
             <thead>
                 <tr>
                     <th>ID (メールアドレス)</th>
-                    <th>役割</th>
                     <th>操作</th>
                 </tr>
             </thead>
             <tbody></tbody>
         </table>
     </div>
+
     <hr class="section-separator">
 
     <div id="auth-container" class="container">
@@ -125,9 +153,8 @@
 
 
     <script>
-        const APP_VERSION = 'v1.1.0';
+        const APP_VERSION = 'v1.0.0';
 
-        // Firebase 設定
         const firebaseConfig = {
   apiKey: "AIzaSyARuAgDXl2ydCKJjWAyl8cOQmIGRBYW2iU",
   authDomain: "mywebmemoapp.firebaseapp.com",
@@ -140,14 +167,13 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // DOM 要素のキャッシュ
         const DOM = {
             adminDashboardContainer: document.getElementById('admin-dashboard-container'),
             adminMessage: document.getElementById('admin-message'),
             usersTableBody: document.querySelector('#users-table tbody'),
-            subAdminDashboardContainer: document.getElementById('sub-admin-dashboard-container'), // サブ管理者ダッシュボード
-            subAdminMessage: document.getElementById('sub-admin-message'), // サブ管理者メッセージ
-            subAdminUsersTableBody: document.querySelector('#sub-admin-users-table tbody'), // サブ管理者テーブル
+            subAdminDashboardContainer: document.getElementById('sub-admin-dashboard-container'),
+            subAdminMessage: document.getElementById('sub-admin-message'),
+            subAdminUsersTableBody: document.querySelector('#sub-admin-users-table tbody'),
             authContainer: document.getElementById('auth-container'),
             memoContainer: document.getElementById('memo-container'),
             emailInput: document.getElementById('email'),
@@ -162,11 +188,9 @@
             viewingUserEmailDisplay: document.getElementById('viewing-user-email')
         };
 
-        // 状態管理
-        let currentUserRole = null; // ログイン中のユーザーの役割 (null, "user", "sub_admin", "admin")
+        let currentUserRole = null;
         let currentUserId = null;
 
-        // UI表示切り替えを統合
         const showSection = (role) => {
             DOM.adminDashboardContainer.style.display = 'none';
             DOM.subAdminDashboardContainer.style.display = 'none';
@@ -190,26 +214,24 @@
             DOM.versionInfoElement.textContent = `Version: ${APP_VERSION}`;
             DOM.loginForm.addEventListener('submit', e => { e.preventDefault(); login(); });
 
-            // ページロード時の初期表示ロジック
             const storedUserRole = localStorage.getItem('loggedInUserRole');
             const storedUserEmail = localStorage.getItem('loggedInUserEmail');
 
             if (storedUserRole && storedUserEmail) {
                 currentUserRole = storedUserRole;
                 currentUserId = storedUserEmail;
-                DOM.currentUserEmailDisplay.textContent = `ユーザー: ${storedUserEmail}`; // 一般ユーザー用
+                DOM.currentUserEmailDisplay.textContent = `ユーザー: ${storedUserEmail}`;
                 showSection(currentUserRole);
                 if (currentUserRole === "admin" || currentUserRole === "sub_admin") {
-                    loadUsers(); // 管理・サブ管理者はユーザー一覧をロード
+                    loadUsers();
                 } else if (currentUserRole === "user") {
-                    loadMemo(storedUserEmail); // 一般ユーザーはメモをロード
+                    loadMemo(storedUserEmail);
                 }
             } else {
-                showSection(null); // 認証画面を表示
+                showSection(null);
             }
         });
 
-        // --- ログアウト関数 (共通) ---
         const logout = () => {
             currentUserRole = null;
             currentUserId = null;
@@ -224,18 +246,15 @@
             DOM.usersTableBody.innerHTML = '';
             DOM.subAdminUsersTableBody.innerHTML = '';
 
-            showSection(null); // 認証画面へ
+            showSection(null);
         };
 
-        // 管理者ログアウト (logout関数を呼ぶだけ)
         const logoutAdmin = logout;
 
-
-        // --- ユーザー管理関連関数 (管理者・サブ管理者ダッシュボード用) ---
         const loadUsers = async () => {
             if (currentUserRole !== "admin" && currentUserRole !== "sub_admin") {
-                DOM.adminMessage.textContent = 'アクセス権がありません。'; // フル管理者用メッセージ
-                DOM.subAdminMessage.textContent = 'アクセス権がありません。'; // サブ管理者用メッセージ
+                DOM.adminMessage.textContent = 'アクセス権がありません。';
+                DOM.subAdminMessage.textContent = 'アクセス権がありません。';
                 return;
             }
 
@@ -243,14 +262,13 @@
                 const usersSnapshot = await db.collection('users').get();
                 let users = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 
-                // 役割に基づいてソート: admin > sub_admin > user の順
                 users.sort((a, b) => {
                     const roleOrder = {"admin": 1, "sub_admin": 2, "user": 3};
-                    const roleA = roleOrder[a.role || "user"]; // roleがない場合はuserとみなす
+                    const roleA = roleOrder[a.role || "user"];
                     const roleB = roleOrder[b.role || "user"];
 
                     if (roleA !== roleB) return roleA - roleB;
-                    return a.email.localeCompare(b.email); // 同一役割内はIDでソート
+                    return a.email.localeCompare(b.email);
                 });
 
                 renderUsersTable(users);
@@ -274,14 +292,12 @@
         };
 
         const renderUsersTable = (users) => {
-            // フル管理者用テーブル
             DOM.usersTableBody.innerHTML = '';
-            // サブ管理者用テーブル
             DOM.subAdminUsersTableBody.innerHTML = '';
 
             if (users.length === 0) {
                 DOM.usersTableBody.innerHTML = '<tr><td colspan="4">登録されているユーザーはいません。</td></tr>';
-                DOM.subAdminUsersTableBody.innerHTML = '<tr><td colspan="3">登録されているユーザーはいません。</td></tr>'; // サブ管理者用は3列
+                DOM.subAdminUsersTableBody.innerHTML = '<tr><td colspan="2">登録されているユーザーはいません。</td></tr>'; // サブ管理者用は2列
                 return;
             }
 
@@ -291,8 +307,8 @@
                 // フル管理者用テーブルの行
                 const adminRow = DOM.usersTableBody.insertRow();
                 adminRow.insertCell().textContent = user.email;
-                adminRow.insertCell().textContent = user.password; // 平文パスワード
-                adminRow.insertCell().textContent = user.role || 'user'; // 役割を表示
+                adminRow.insertCell().textContent = user.password;
+                adminRow.insertCell().textContent = user.role || 'user';
 
                 const adminActionCell = adminRow.insertCell();
                 const viewButton = document.createElement('button');
@@ -301,7 +317,7 @@
                 viewButton.onclick = () => viewUserMemo(user.email);
                 adminActionCell.appendChild(viewButton);
 
-                if (!isSelf) { // 自身以外は削除ボタンを表示
+                if (!isSelf) {
                     const deleteButton = document.createElement('button');
                     deleteButton.textContent = '削除';
                     deleteButton.className = 'delete-button';
@@ -314,10 +330,10 @@
                 // サブ管理者用テーブルの行 (パスワードと閲覧ボタンなし)
                 const subAdminRow = DOM.subAdminUsersTableBody.insertRow();
                 subAdminRow.insertCell().textContent = user.email;
-                subAdminRow.insertCell().textContent = user.role || 'user';
+                subAdminRow.insertCell().textContent = user.role || 'user'; // サブ管理者ダッシュボードでも役割は表示
                 const subAdminActionCell = subAdminRow.insertCell();
 
-                if (!isSelf) { // 自身以外は削除ボタンを表示
+                if (!isSelf) {
                     const deleteButton = document.createElement('button');
                     deleteButton.textContent = '削除';
                     deleteButton.className = 'delete-button';
@@ -355,7 +371,7 @@
         const deleteUser = async (email) => {
             if (!confirm(`本当にユーザー ${email} とそのメモを削除しますか？`)) return;
 
-            if (currentUserRole !== "admin" && currentUserRole !== "sub_admin") { // 管理者とサブ管理者のみ削除可能
+            if (currentUserRole !== "admin" && currentUserRole !== "sub_admin") {
                 (currentUserRole === "admin" ? DOM.adminMessage : DOM.subAdminMessage).textContent = 'この操作には管理者またはサブ管理者権限が必要です。';
                 return;
             }
@@ -374,7 +390,6 @@
             }
         };
 
-        // --- 通常ユーザー認証関連関数（全役割共通） ---
         const signup = async () => {
             const email = DOM.emailInput.value;
             const password = DOM.passwordInput.value;
@@ -431,13 +446,13 @@
                     localStorage.setItem('loggedInUserEmail', currentUserId);
 
                     DOM.authMessage.textContent = '';
-                    DOM.currentUserEmailDisplay.textContent = `ユーザー: ${currentUserId}`; // 一般ユーザー用
+                    DOM.currentUserEmailDisplay.textContent = `ユーザー: ${currentUserId}`;
 
-                    showSection(currentUserRole);
+                    showSection(currentUserRole); // 役割に基づいてセクションを表示
                     if (currentUserRole === "admin" || currentUserRole === "sub_admin") {
-                        loadUsers(); // 管理・サブ管理者はユーザー一覧をロード
+                        loadUsers();
                     } else if (currentUserRole === "user") {
-                        loadMemo(currentUserId); // 一般ユーザーはメモをロード
+                        loadMemo(currentUserId);
                     }
                 } else {
                     DOM.authMessage.className = 'message';
@@ -449,7 +464,6 @@
                 console.error("ログインエラー:", error);
             }
         };
-
 
         const saveMemo = async () => {
             if (currentUserRole !== "user") { // ユーザー役割のみメモ保存可能
