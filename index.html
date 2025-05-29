@@ -82,7 +82,8 @@
     <div id="admin-dashboard-container" class="container" style="display: none;">
         <div class="header-controls">
             <h2>管理者ダッシュボード</h2>
-            <button onclick="logout()">ログアウト</button> </div>
+            <button onclick="logout()">ログアウト</button>
+        </div>
         <button onclick="loadUsers()" style="margin-bottom: 10px;">ユーザー一覧を更新</button>
         <p id="admin-message" class="message"></p>
 
@@ -102,7 +103,9 @@
 
     <div id="sub-admin-dashboard-container" class="container" style="display: none;">
         <div class="header-controls">
-            <h2>ダッシュボード</h2> <button onclick="logout()">ログアウト</button> </div>
+            <h2>ダッシュボード</h2>
+            <button onclick="logout()">ログアウト</button>
+        </div>
         <button onclick="loadUsers()" style="margin-bottom: 10px;">ユーザー一覧を更新</button>
         <p id="sub-admin-message" class="message"></p>
 
@@ -111,7 +114,8 @@
             <thead>
                 <tr>
                     <th>ID (メールアドレス)</th>
-                    <th>操作</th> </tr>
+                    <th>操作</th>
+                </tr>
             </thead>
             <tbody></tbody>
         </table>
@@ -151,7 +155,7 @@
 
 
     <script>
-        const APP_VERSION = 'v1.5.0';
+        const APP_VERSION = 'v1.0.0';
 
         const firebaseConfig = {
   apiKey: "AIzaSyARuAgDXl2ydCKJjWAyl8cOQmIGRBYW2iU",
@@ -248,9 +252,7 @@
             showSection(null);
         };
 
-        const logoutAdmin = logout; // この行は冗長になりますが、HTMLのonclick属性を修正しない場合は残してもOKです。
-                                   // HTMLのonclick="logoutAdmin()"をonclick="logout()"に直接修正すれば、この行は削除できます。
-
+        const logoutAdmin = logout; // HTMLのonclick="logoutAdmin()"をonclick="logout()"に修正すれば、この行は削除できます。
 
         const loadUsers = async () => {
             if (currentUserRole !== "admin" && currentUserRole !== "sub_admin") {
@@ -261,10 +263,13 @@
 
             try {
                 const usersSnapshot = await db.collection('users').get();
-                let users = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                // admin ロールのユーザーを除外
+                let users = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+                                    .filter(user => user.role !== "admin"); 
                 
+                // 役割に基づいてソート: sub_admin > user の順
                 users.sort((a, b) => {
-                    const roleOrder = {"admin": 1, "sub_admin": 2, "user": 3};
+                    const roleOrder = {"sub_admin": 1, "user": 2}; // adminは除外されているので考慮しない
                     const roleA = roleOrder[a.role || "user"];
                     const roleB = roleOrder[b.role || "user"];
 
@@ -296,61 +301,53 @@
             DOM.usersTableBody.innerHTML = '';
             DOM.subAdminUsersTableBody.innerHTML = '';
 
-            // フル管理者用テーブル (DOM.usersTableBody)
-            // 列数: ID, パスワード, 管理者?, 操作
             if (users.length === 0) {
                 DOM.usersTableBody.innerHTML = '<tr><td colspan="4">登録されているユーザーはいません。</td></tr>';
-            } else {
-                users.forEach(user => {
-                    const isSelf = (user.email === currentUserId);
-                    const adminRow = DOM.usersTableBody.insertRow();
-                    adminRow.insertCell().textContent = user.email;
-                    adminRow.insertCell().textContent = user.password;
-                    adminRow.insertCell().textContent = user.role || 'user'; // 役割を表示
-
-                    const adminActionCell = adminRow.insertCell();
-                    const viewButton = document.createElement('button');
-                    viewButton.textContent = '閲覧';
-                    viewButton.className = 'view-button'; // 緑色
-                    viewButton.onclick = () => viewUserMemo(user.email);
-                    adminActionCell.appendChild(viewButton);
-
-                    if (!isSelf) {
-                        const deleteButton = document.createElement('button');
-                        deleteButton.textContent = '削除';
-                        deleteButton.className = 'delete-button'; // 赤色
-                        deleteButton.onclick = () => deleteUser(user.email);
-                        adminActionCell.appendChild(deleteButton);
-                    } else {
-                        adminActionCell.textContent += ' (自身)';
-                    }
-                });
+                DOM.subAdminUsersTableBody.innerHTML = '<tr><td colspan="2">登録されているユーザーはいません。</td></tr>';
+                return;
             }
 
-            // サブ管理者用テーブル (DOM.subAdminUsersTableBody)
-            // 列数: ID, 操作 (パスワードと役割の列なし)
-            if (users.length === 0) {
-                DOM.subAdminUsersTableBody.innerHTML = '<tr><td colspan="2">登録されているユーザーはいません。</td></tr>'; // 2列に変更
-            } else {
-                users.forEach(user => {
-                    const isSelf = (user.email === currentUserId);
-                    const subAdminRow = DOM.subAdminUsersTableBody.insertRow();
-                    subAdminRow.insertCell().textContent = user.email;
-                    // パスワード列は表示しない
-                    // 役割列も表示しない
-                    const subAdminActionCell = subAdminRow.insertCell();
+            users.forEach(user => {
+                const isSelf = (user.email === currentUserId);
 
-                    if (!isSelf) {
-                        const deleteButton = document.createElement('button');
-                        deleteButton.textContent = '削除';
-                        deleteButton.className = 'delete-button'; // 赤色
-                        deleteButton.onclick = () => deleteUser(user.email);
-                        subAdminActionCell.appendChild(deleteButton);
-                    } else {
-                        subAdminActionCell.textContent = '(自身)';
-                    }
-                });
-            }
+                // フル管理者用テーブルの行 (adminロールは既にフィルター済み)
+                const adminRow = DOM.usersTableBody.insertRow();
+                adminRow.insertCell().textContent = user.email;
+                adminRow.insertCell().textContent = user.password;
+                adminRow.insertCell().textContent = user.role || 'user'; // 役割を表示
+
+                const adminActionCell = adminRow.insertCell();
+                const viewButton = document.createElement('button');
+                viewButton.textContent = '閲覧';
+                viewButton.className = 'view-button'; // 緑色
+                viewButton.onclick = () => viewUserMemo(user.email);
+                adminActionCell.appendChild(viewButton);
+
+                if (!isSelf) {
+                    const deleteButton = document.createElement('button');
+                    deleteButton.textContent = '削除';
+                    deleteButton.className = 'delete-button'; // 赤色
+                    deleteButton.onclick = () => deleteUser(user.email);
+                    adminActionCell.appendChild(deleteButton);
+                } else {
+                    adminActionCell.textContent += ' (自身)';
+                }
+
+                // サブ管理者用テーブルの行 (パスワードと閲覧ボタンなし)
+                const subAdminRow = DOM.subAdminUsersTableBody.insertRow();
+                subAdminRow.insertCell().textContent = user.email;
+                const subAdminActionCell = subAdminRow.insertCell(); // 役割列は削除されたので、次のセルが操作セル
+
+                if (!isSelf) {
+                    const deleteButton = document.createElement('button');
+                    deleteButton.textContent = '削除';
+                    deleteButton.className = 'delete-button'; // 赤色
+                    deleteButton.onclick = () => deleteUser(user.email);
+                    subAdminActionCell.appendChild(deleteButton);
+                } else {
+                    subAdminActionCell.textContent = '(自身)';
+                }
+            });
         };
 
         const viewUserMemo = async (email) => {
