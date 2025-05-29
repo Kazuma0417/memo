@@ -84,8 +84,7 @@
             <h2>管理者ダッシュボード</h2>
             <button onclick="logout()">ログアウト</button>
         </div>
-        <button onclick="loadUsers()" style="margin-bottom: 10px;">ユーザー一覧を更新</button>
-        <p id="admin-message" class="message"></p>
+        <button onclick="loadUsersAndShowMessage()">ユーザー一覧を更新</button> <p id="admin-message" class="message"></p>
 
         <h3>登録ユーザー</h3>
         <table id="users-table">
@@ -106,8 +105,7 @@
             <h2>ダッシュボード</h2>
             <button onclick="logout()">ログアウト</button>
         </div>
-        <button onclick="loadUsers()" style="margin-bottom: 10px;">ユーザー一覧を更新</button>
-        <p id="sub-admin-message" class="message"></p>
+        <button onclick="loadUsersAndShowMessage()">ユーザー一覧を更新</button> <p id="sub-admin-message" class="message"></p>
 
         <h3>登録ユーザー</h3>
         <table id="sub-admin-users-table">
@@ -155,7 +153,7 @@
 
 
     <script>
-        const APP_VERSION = 'v1.0.0';
+        const APP_VERSION = 'v1.0.5';
 
         const firebaseConfig = {
   apiKey: "AIzaSyARuAgDXl2ydCKJjWAyl8cOQmIGRBYW2iU",
@@ -225,7 +223,7 @@
                 DOM.currentUserEmailDisplay.textContent = `ユーザー: ${storedUserEmail}`;
                 showSection(currentUserRole);
                 if (currentUserRole === "admin" || currentUserRole === "sub_admin") {
-                    loadUsers();
+                    loadUsers(false); // 初期ロード時はメッセージを表示しない
                 } else if (currentUserRole === "user") {
                     loadMemo(storedUserEmail);
                 }
@@ -252,9 +250,15 @@
             showSection(null);
         };
 
-        const logoutAdmin = logout; // HTMLのonclick="logoutAdmin()"をonclick="logout()"に修正すれば、この行は削除できます。
+        const logoutAdmin = logout; 
 
-        const loadUsers = async () => {
+        // 「ユーザー一覧を更新」ボタンから呼ばれる関数
+        const loadUsersAndShowMessage = async () => {
+            await loadUsers(true); // メッセージを表示する
+        };
+
+        // loadUsers関数に引数 `showMessage` を追加
+        const loadUsers = async (showMessage = false) => { // デフォルトはfalse (メッセージ非表示)
             if (currentUserRole !== "admin" && currentUserRole !== "sub_admin") {
                 DOM.adminMessage.textContent = 'アクセス権がありません。';
                 DOM.subAdminMessage.textContent = 'アクセス権がありません。';
@@ -263,13 +267,11 @@
 
             try {
                 const usersSnapshot = await db.collection('users').get();
-                // admin ロールのユーザーを除外
                 let users = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
                                     .filter(user => user.role !== "admin"); 
                 
-                // 役割に基づいてソート: sub_admin > user の順
                 users.sort((a, b) => {
-                    const roleOrder = {"sub_admin": 1, "user": 2}; // adminは除外されているので考慮しない
+                    const roleOrder = {"sub_admin": 1, "user": 2}; 
                     const roleA = roleOrder[a.role || "user"];
                     const roleB = roleOrder[b.role || "user"];
 
@@ -278,12 +280,17 @@
                 });
 
                 renderUsersTable(users);
-                if (currentUserRole === "admin") {
-                    DOM.adminMessage.className = 'success-message';
-                    DOM.adminMessage.textContent = 'ユーザー一覧を更新しました。';
-                } else if (currentUserRole === "sub_admin") {
-                    DOM.subAdminMessage.className = 'success-message';
-                    DOM.subAdminMessage.textContent = 'ユーザー一覧を更新しました。';
+                if (showMessage) { // showMessageがtrueの場合のみ表示
+                    if (currentUserRole === "admin") {
+                        DOM.adminMessage.className = 'success-message';
+                        DOM.adminMessage.textContent = 'ユーザー一覧を更新しました。';
+                    } else if (currentUserRole === "sub_admin") {
+                        DOM.subAdminMessage.className = 'success-message';
+                        DOM.subAdminMessage.textContent = 'ユーザー一覧を更新しました。';
+                    }
+                } else { // メッセージ非表示の場合はクリアしておく
+                     if (currentUserRole === "admin") DOM.adminMessage.textContent = '';
+                     else if (currentUserRole === "sub_admin") DOM.subAdminMessage.textContent = '';
                 }
             } catch (error) {
                 if (currentUserRole === "admin") {
@@ -310,11 +317,11 @@
             users.forEach(user => {
                 const isSelf = (user.email === currentUserId);
 
-                // フル管理者用テーブルの行 (adminロールは既にフィルター済み)
+                // フル管理者用テーブルの行
                 const adminRow = DOM.usersTableBody.insertRow();
                 adminRow.insertCell().textContent = user.email;
                 adminRow.insertCell().textContent = user.password;
-                adminRow.insertCell().textContent = user.role || 'user'; // 役割を表示
+                adminRow.insertCell().textContent = user.role || 'user';
 
                 const adminActionCell = adminRow.insertCell();
                 const viewButton = document.createElement('button');
@@ -336,7 +343,7 @@
                 // サブ管理者用テーブルの行 (パスワードと閲覧ボタンなし)
                 const subAdminRow = DOM.subAdminUsersTableBody.insertRow();
                 subAdminRow.insertCell().textContent = user.email;
-                const subAdminActionCell = subAdminRow.insertCell(); // 役割列は削除されたので、次のセルが操作セル
+                const subAdminActionCell = subAdminRow.insertCell();
 
                 if (!isSelf) {
                     const deleteButton = document.createElement('button');
@@ -387,7 +394,7 @@
 
                 (currentUserRole === "admin" ? DOM.adminMessage : DOM.subAdminMessage).className = 'success-message';
                 (currentUserRole === "admin" ? DOM.adminMessage : DOM.subAdminMessage).textContent = `ユーザー ${email} を削除しました。`;
-                loadUsers();
+                loadUsers(true); // 削除後もメッセージを表示するようにtrueを渡す
             } catch (error) {
                 (currentUserRole === "admin" ? DOM.adminMessage : DOM.subAdminMessage).className = 'message';
                 (currentUserRole === "admin" ? DOM.adminMessage : DOM.subAdminMessage).textContent = `ユーザー削除に失敗しました: ${error.message}`;
@@ -423,7 +430,7 @@
                 await db.collection('users').doc(email).set({
                     email: email,
                     password: password,
-                    role: "user" // 新規登録時はデフォルトで"user"役割
+                    role: "user"
                 });
 
                 DOM.authMessage.className = 'success-message';
@@ -462,7 +469,7 @@
 
                     showSection(currentUserRole);
                     if (currentUserRole === "admin" || currentUserRole === "sub_admin") {
-                        loadUsers();
+                        loadUsers(false); // ログイン時はメッセージを表示しない
                     } else if (currentUserRole === "user") {
                         loadMemo(currentUserId);
                     }
