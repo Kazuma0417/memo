@@ -337,7 +337,7 @@
                     deleteButton.onclick = () => deleteUser(user.email);
                     adminActionCell.appendChild(deleteButton);
                 } else {
-                    adminActionCell.textContent += ' (自身)';
+                    adminActionCell.textContent += ' (自分)';
                 }
 
                 // サブ管理者用テーブルの行 (パスワードと閲覧ボタンなし)
@@ -352,7 +352,7 @@
                     deleteButton.onclick = () => deleteUser(user.email);
                     subAdminActionCell.appendChild(deleteButton);
                 } else {
-                    subAdminActionCell.textContent = '(自身)';
+                    subAdminActionCell.textContent = '(自分)';
                 }
             });
         };
