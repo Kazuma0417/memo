@@ -13,7 +13,7 @@
         button:hover { background-color: #0056b3; }
         .delete-button { background-color: #dc3545; }
         .delete-button:hover { background-color: #c82333; }
-        /* 閲覧ボタンの色を緑色に修正 */
+        /* 閲覧ボタンの色は緑色 */
         .view-button { background-color: #28a745; } 
         .view-button:hover { background-color: #218838; }
         .message { color: red; margin-top: 10px; }
@@ -81,8 +81,8 @@
 
     <div id="admin-dashboard-container" class="container" style="display: none;">
         <div class="header-controls">
-            <h2>管理者ダッシュボード</h2> <button onclick="logoutAdmin()">管理者ログアウト</button>
-        </div>
+            <h2>管理者ダッシュボード</h2>
+            <button onclick="logout()">ログアウト</button> </div>
         <button onclick="loadUsers()" style="margin-bottom: 10px;">ユーザー一覧を更新</button>
         <p id="admin-message" class="message"></p>
 
@@ -92,7 +92,7 @@
                 <tr>
                     <th>ID (メールアドレス)</th>
                     <th>パスワード (平文)</th>
-                    <th>役割</th>
+                    <th>管理者？</th>
                     <th>操作</th>
                 </tr>
             </thead>
@@ -102,8 +102,7 @@
 
     <div id="sub-admin-dashboard-container" class="container" style="display: none;">
         <div class="header-controls">
-            <h2>ダッシュボード</h2> <button onclick="logoutAdmin()">サブ管理者ログアウト</button>
-        </div>
+            <h2>ダッシュボード</h2> <button onclick="logout()">ログアウト</button> </div>
         <button onclick="loadUsers()" style="margin-bottom: 10px;">ユーザー一覧を更新</button>
         <p id="sub-admin-message" class="message"></p>
 
@@ -112,8 +111,7 @@
             <thead>
                 <tr>
                     <th>ID (メールアドレス)</th>
-                    <th>操作</th>
-                </tr>
+                    <th>操作</th> </tr>
             </thead>
             <tbody></tbody>
         </table>
@@ -153,7 +151,7 @@
 
 
     <script>
-        const APP_VERSION = 'v1.0.0';
+        const APP_VERSION = 'v1.5.0';
 
         const firebaseConfig = {
   apiKey: "AIzaSyARuAgDXl2ydCKJjWAyl8cOQmIGRBYW2iU",
@@ -232,6 +230,7 @@
             }
         });
 
+        // ログアウト関数 (共通)
         const logout = () => {
             currentUserRole = null;
             currentUserId = null;
@@ -249,7 +248,9 @@
             showSection(null);
         };
 
-        const logoutAdmin = logout;
+        const logoutAdmin = logout; // この行は冗長になりますが、HTMLのonclick属性を修正しない場合は残してもOKです。
+                                   // HTMLのonclick="logoutAdmin()"をonclick="logout()"に直接修正すれば、この行は削除できます。
+
 
         const loadUsers = async () => {
             if (currentUserRole !== "admin" && currentUserRole !== "sub_admin") {
@@ -295,54 +296,61 @@
             DOM.usersTableBody.innerHTML = '';
             DOM.subAdminUsersTableBody.innerHTML = '';
 
+            // フル管理者用テーブル (DOM.usersTableBody)
+            // 列数: ID, パスワード, 管理者?, 操作
             if (users.length === 0) {
                 DOM.usersTableBody.innerHTML = '<tr><td colspan="4">登録されているユーザーはいません。</td></tr>';
-                DOM.subAdminUsersTableBody.innerHTML = '<tr><td colspan="2">登録されているユーザーはいません。</td></tr>'; // サブ管理者用は2列
-                return;
+            } else {
+                users.forEach(user => {
+                    const isSelf = (user.email === currentUserId);
+                    const adminRow = DOM.usersTableBody.insertRow();
+                    adminRow.insertCell().textContent = user.email;
+                    adminRow.insertCell().textContent = user.password;
+                    adminRow.insertCell().textContent = user.role || 'user'; // 役割を表示
+
+                    const adminActionCell = adminRow.insertCell();
+                    const viewButton = document.createElement('button');
+                    viewButton.textContent = '閲覧';
+                    viewButton.className = 'view-button'; // 緑色
+                    viewButton.onclick = () => viewUserMemo(user.email);
+                    adminActionCell.appendChild(viewButton);
+
+                    if (!isSelf) {
+                        const deleteButton = document.createElement('button');
+                        deleteButton.textContent = '削除';
+                        deleteButton.className = 'delete-button'; // 赤色
+                        deleteButton.onclick = () => deleteUser(user.email);
+                        adminActionCell.appendChild(deleteButton);
+                    } else {
+                        adminActionCell.textContent += ' (自身)';
+                    }
+                });
             }
 
-            users.forEach(user => {
-                const isSelf = (user.email === currentUserId);
+            // サブ管理者用テーブル (DOM.subAdminUsersTableBody)
+            // 列数: ID, 操作 (パスワードと役割の列なし)
+            if (users.length === 0) {
+                DOM.subAdminUsersTableBody.innerHTML = '<tr><td colspan="2">登録されているユーザーはいません。</td></tr>'; // 2列に変更
+            } else {
+                users.forEach(user => {
+                    const isSelf = (user.email === currentUserId);
+                    const subAdminRow = DOM.subAdminUsersTableBody.insertRow();
+                    subAdminRow.insertCell().textContent = user.email;
+                    // パスワード列は表示しない
+                    // 役割列も表示しない
+                    const subAdminActionCell = subAdminRow.insertCell();
 
-                // フル管理者用テーブルの行
-                const adminRow = DOM.usersTableBody.insertRow();
-                adminRow.insertCell().textContent = user.email;
-                adminRow.insertCell().textContent = user.password;
-                adminRow.insertCell().textContent = user.role || 'user';
-
-                const adminActionCell = adminRow.insertCell();
-                const viewButton = document.createElement('button');
-                viewButton.textContent = '閲覧';
-                viewButton.className = 'view-button';
-                viewButton.onclick = () => viewUserMemo(user.email);
-                adminActionCell.appendChild(viewButton);
-
-                if (!isSelf) {
-                    const deleteButton = document.createElement('button');
-                    deleteButton.textContent = '削除';
-                    deleteButton.className = 'delete-button';
-                    deleteButton.onclick = () => deleteUser(user.email);
-                    adminActionCell.appendChild(deleteButton);
-                } else {
-                    adminActionCell.textContent += ' (自身)';
-                }
-
-                // サブ管理者用テーブルの行 (パスワードと閲覧ボタンなし)
-                const subAdminRow = DOM.subAdminUsersTableBody.insertRow();
-                subAdminRow.insertCell().textContent = user.email;
-                subAdminRow.insertCell().textContent = user.role || 'user'; // サブ管理者ダッシュボードでも役割は表示
-                const subAdminActionCell = subAdminRow.insertCell();
-
-                if (!isSelf) {
-                    const deleteButton = document.createElement('button');
-                    deleteButton.textContent = '削除';
-                    deleteButton.className = 'delete-button';
-                    deleteButton.onclick = () => deleteUser(user.email);
-                    subAdminActionCell.appendChild(deleteButton);
-                } else {
-                    subAdminActionCell.textContent = '(自身)';
-                }
-            });
+                    if (!isSelf) {
+                        const deleteButton = document.createElement('button');
+                        deleteButton.textContent = '削除';
+                        deleteButton.className = 'delete-button'; // 赤色
+                        deleteButton.onclick = () => deleteUser(user.email);
+                        subAdminActionCell.appendChild(deleteButton);
+                    } else {
+                        subAdminActionCell.textContent = '(自身)';
+                    }
+                });
+            }
         };
 
         const viewUserMemo = async (email) => {
@@ -400,6 +408,13 @@
                 return;
             }
 
+            // 'admin'というIDは新規登録させない
+            if (email === "admin") {
+                DOM.authMessage.className = 'message';
+                DOM.authMessage.textContent = 'このIDは管理者用です。新規登録できません。';
+                return;
+            }
+
             try {
                 const userDoc = await db.collection('users').doc(email).get();
                 if (userDoc.exists) {
@@ -439,7 +454,7 @@
 
                 if (userDoc.exists && userDoc.data().password === password) {
                     const userData = userDoc.data();
-                    currentUserRole = userData.role || "user"; // roleが設定されていなければ"user"とみなす
+                    currentUserRole = userData.role || "user";
                     currentUserId = email;
 
                     localStorage.setItem('loggedInUserRole', currentUserRole);
@@ -448,7 +463,7 @@
                     DOM.authMessage.textContent = '';
                     DOM.currentUserEmailDisplay.textContent = `ユーザー: ${currentUserId}`;
 
-                    showSection(currentUserRole); // 役割に基づいてセクションを表示
+                    showSection(currentUserRole);
                     if (currentUserRole === "admin" || currentUserRole === "sub_admin") {
                         loadUsers();
                     } else if (currentUserRole === "user") {
@@ -466,7 +481,7 @@
         };
 
         const saveMemo = async () => {
-            if (currentUserRole !== "user") { // ユーザー役割のみメモ保存可能
+            if (currentUserRole !== "user") {
                 DOM.authMessage.textContent = 'ユーザーとしてログインしてください。';
                 return;
             }
@@ -484,7 +499,7 @@
         };
 
         const loadMemo = async (userId) => {
-            if (currentUserRole !== "user") { // ユーザー役割のみメモ読み込み可能
+            if (currentUserRole !== "user") {
                 return;
             }
             try {
