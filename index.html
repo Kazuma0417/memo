@@ -153,7 +153,7 @@
 
 
     <script>
-        const APP_VERSION = 'v1.1.1';
+        const APP_VERSION = 'v1.1.0';
 
         const firebaseConfig = {
   apiKey: "AIzaSyARuAgDXl2ydCKJjWAyl8cOQmIGRBYW2iU",
@@ -421,7 +421,7 @@
                 const userDoc = await db.collection('users').doc(email).get();
                 if (userDoc.exists) {
                     DOM.authMessage.className = 'message';
-                    DOM.authMessage.textContent = 'このIDは既に登録されています。';
+                    DOM.authMessage.textContent = 'このメールアドレスは既に登録されています。';
                     return;
                 }
 
