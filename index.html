@@ -126,9 +126,8 @@
         </div>
     </div>
 
-
     <script>
-        const APP_VERSION = 'v1.1.0';
+        const APP_VERSION = 'v1.1.1';
 
         const firebaseConfig = {
           apiKey: "AIzaSyARuAgDXl2ydCKJjWAyl8cOQmIGRBYW2iU",
@@ -163,29 +162,18 @@
             viewingUserEmailDisplay: document.getElementById('viewing-user-email')
         };
         
-        // URLを検出し、安全な<a>タグに変換してHTML文字列を返す関数
         const linkify = (text) => {
             if (!text) return '';
-
-            // 意図しないHTMLタグの実行を防ぐため、< と > をエスケープ
             const safeText = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
-            // URLを検出するための正規表現
             const urlRegex = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])|(\bwww\.[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
-
-            // 検出したURLを<a>タグに置換
             const linkedText = safeText.replace(urlRegex, (url) => {
                 let href = url;
-                // 'www.'で始まるURLに 'http://' を補完
                 if (!href.match(/^(https?|ftp|file):\/\//)) {
                     href = 'http://' + href;
                 }
-                // href属性内の " をエスケープ
                 const escapedHref = href.replace(/"/g, '&quot;');
                 return `<a href="${escapedHref}" target="_blank" rel="noopener noreferrer">${url}</a>`;
             });
-
-            // テキスト内の改行を<br>タグに変換
             return linkedText.replace(/\n/g, '<br>');
         };
 
@@ -204,7 +192,7 @@
                 DOM.subAdminDashboardContainer.style.display = 'block';
             } else if (role === "user") {
                 DOM.memoContainer.style.display = 'block';
-            } else { // ログアウト状態
+            } else { 
                 DOM.authContainer.style.display = 'block';
                 DOM.emailInput.value = '';
                 DOM.passwordInput.value = '';
@@ -233,7 +221,6 @@
             }
         });
 
-        // ログアウト関数 (共通)
         const logout = () => {
             currentUserRole = null;
             currentUserId = null;
@@ -255,7 +242,6 @@
             await loadUsers(true);
         };
 
-        // loadUsers関数に引数 `showMessage` を追加
         const loadUsers = async (showMessage = false) => {
             if (currentUserRole !== "admin" && currentUserRole !== "sub_admin") {
                 DOM.adminMessage.textContent = 'アクセス権がありません。';
@@ -265,11 +251,9 @@
 
             try {
                 const usersSnapshot = await db.collection('users').get();
-                // admin ロールのユーザーを除外
                 let users = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
                                     .filter(user => user.role !== "admin"); 
                 
-                // 役割に基づいてソート: sub_admin > user の順
                 users.sort((a, b) => {
                     const roleOrder = {"sub_admin": 1, "user": 2}; 
                     const roleA = roleOrder[a.role || "user"];
@@ -317,7 +301,6 @@
             users.forEach(user => {
                 const isSelf = (user.email === currentUserId);
 
-                // フル管理者用テーブルの行 (adminロールは既にフィルター済み)
                 const adminRow = DOM.usersTableBody.insertRow();
                 adminRow.insertCell().textContent = user.email;
                 adminRow.insertCell().textContent = user.password;
@@ -340,7 +323,6 @@
                     adminActionCell.textContent += ' (自分)';
                 }
 
-                // サブ管理者用テーブルの行 (パスワードと閲覧ボタンなし)
                 const subAdminRow = DOM.subAdminUsersTableBody.insertRow();
                 subAdminRow.insertCell().textContent = user.email;
                 const subAdminActionCell = subAdminRow.insertCell();
@@ -358,7 +340,7 @@
         };
 
         const viewUserMemo = async (email) => {
-            if (currentUserRole !== "admin") { // 管理者のみ閲覧可能
+            if (currentUserRole !== "admin") {
                 alert('この操作には管理者権限が必要です。');
                 return;
             }
@@ -488,7 +470,6 @@
                 DOM.authMessage.textContent = 'ユーザーとしてログインしてください。';
                 return;
             }
-            // .textContent を使ってHTMLタグを除いた純粋なテキストを取得
             const memoText = DOM.memoContent.textContent;
             try {
                 await db.collection('memos').doc(currentUserId).set({
@@ -509,11 +490,9 @@
             try {
                 const doc = await db.collection('memos').doc(userId).get();
                 const memoText = doc.exists ? doc.data().content || '' : '';
-                // .innerHTML を使ってリンク化されたHTMLをdivに設定
                 DOM.memoContent.innerHTML = linkify(memoText);
             } catch (error) {
                 console.error("メモ読み込みエラー:", error);
-                // エラー時はtextContentで安全に設定
                 DOM.memoContent.textContent = 'メモの読み込みに失敗しました。';
             }
         };
