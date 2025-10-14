@@ -9,7 +9,6 @@
         .container { background-color: #f0f0f0; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); margin-bottom: 20px; width: 80%; max-width: 800px; }
         .auth-form input { margin-bottom: 10px; padding: 8px; width: calc(100% - 16px); box-sizing: border-box; }
         
-        /* textareaは元のスタイルを残しつつ、新しいdiv用のスタイルを追加 */
         textarea { width: 100%; height: 200px; margin-bottom: 10px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
         .editable-div {
             width: 100%;
@@ -20,9 +19,9 @@
             border-radius: 4px;
             box-sizing: border-box;
             background-color: #fff;
-            overflow-y: auto; /* スクロール可能にする */
-            white-space: pre-wrap; /* 改行を維持する */
-            word-wrap: break-word; /* 長い単語を折り返す */
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
         }
         .editable-div:empty:before {
             content: attr(placeholder);
@@ -127,7 +126,7 @@
     </div>
 
     <script>
-        const APP_VERSION = 'v1.1.1';
+        const APP_VERSION = 'v1.1.0';
 
         const firebaseConfig = {
           apiKey: "AIzaSyARuAgDXl2ydCKJjWAyl8cOQmIGRBYW2iU",
@@ -203,6 +202,17 @@
             DOM.versionInfoElement.textContent = `Version: ${APP_VERSION}`;
             DOM.loginForm.addEventListener('submit', e => { e.preventDefault(); login(); });
 
+            // メモエリア内のクリックを監視
+            DOM.memoContent.addEventListener('click', (e) => {
+                // クリックされたのが <a> タグの場合のみ処理
+                if (e.target.tagName === 'A') {
+                    // 本来の編集動作をキャンセル
+                    e.preventDefault(); 
+                    // リンクのURLを新しいタブで開く
+                    window.open(e.target.href, '_blank', 'noopener,noreferrer');
+                }
+            });
+
             const storedUserRole = localStorage.getItem('loggedInUserRole');
             const storedUserEmail = localStorage.getItem('loggedInUserEmail');
 
@@ -227,7 +237,7 @@
             localStorage.removeItem('loggedInUserRole');
             localStorage.removeItem('loggedInUserEmail');
             
-            DOM.memoContent.innerHTML = ''; // .value から変更
+            DOM.memoContent.innerHTML = '';
             DOM.currentUserEmailDisplay.textContent = '';
             DOM.authMessage.textContent = '';
             DOM.adminMessage.textContent = '';
