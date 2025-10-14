@@ -139,6 +139,10 @@
         </div>
         <textarea id="memo-content" placeholder="ここにメモを書いてください..."></textarea>
         <button onclick="saveMemo()">メモを保存</button>
+        
+        <hr style="margin: 20px 0;">
+        <h3>プレビュー（リンクをクリックできます）</h3>
+        <div id="memo-display" style="border: 1px solid #ccc; padding: 10px; min-height: 100px; background-color: #fff; border-radius: 4px; white-space: pre-wrap; word-wrap: break-word;"></div>
     </div>
 
     <div id="version-info"></div>
@@ -156,14 +160,14 @@
         const APP_VERSION = 'v1.1.0';
 
         const firebaseConfig = {
-  apiKey: "AIzaSyARuAgDXl2ydCKJjWAyl8cOQmIGRBYW2iU",
-  authDomain: "mywebmemoapp.firebaseapp.com",
-  projectId: "mywebmemoapp",
-  storageBucket: "mywebmemoapp.firebasestorage.app",
-  messagingSenderId: "381164213024",
-  appId: "1:381164213024:web:8c4f1d10d169ed039dfd45",
-  measurementId: "G-XGTJGL45B1"
-};
+          apiKey: "AIzaSyARuAgDXl2ydCKJjWAyl8cOQmIGRBYW2iU",
+          authDomain: "mywebmemoapp.firebaseapp.com",
+          projectId: "mywebmemoapp",
+          storageBucket: "mywebmemoapp.firebasestorage.app",
+          messagingSenderId: "381164213024",
+          appId: "1:381164213024:web:8c4f1d10d169ed039dfd45",
+          measurementId: "G-XGTJGL45B1"
+        };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
@@ -185,7 +189,34 @@
             versionInfoElement: document.getElementById('version-info'),
             memoViewerOverlay: document.getElementById('memo-viewer-overlay'),
             memoViewerTextarea: document.getElementById('memo-viewer-textarea'),
-            viewingUserEmailDisplay: document.getElementById('viewing-user-email')
+            viewingUserEmailDisplay: document.getElementById('viewing-user-email'),
+            memoDisplay: document.getElementById('memo-display')
+        };
+        
+        // URLを検出し、安全な<a>タグに変換してHTML文字列を返す関数
+        const linkify = (text) => {
+            if (!text) return '';
+
+            // 意図しないHTMLタグの実行を防ぐため、< と > をエスケープ
+            const safeText = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+            // URLを検出するための正規表現
+            const urlRegex = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])|(\bwww\.[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
+
+            // 検出したURLを<a>タグに置換
+            const linkedText = safeText.replace(urlRegex, (url) => {
+                let href = url;
+                // 'www.'で始まるURLに 'http://' を補完
+                if (!href.match(/^(https?|ftp|file):\/\//)) {
+                    href = 'http://' + href;
+                }
+                // href属性内の " をエスケープ
+                const escapedHref = href.replace(/"/g, '&quot;');
+                return `<a href="${escapedHref}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+            });
+
+            // テキスト内の改行を<br>タグに変換
+            return linkedText.replace(/\n/g, '<br>');
         };
 
         let currentUserRole = null;
@@ -240,6 +271,7 @@
             localStorage.removeItem('loggedInUserEmail');
             
             DOM.memoContent.value = '';
+            DOM.memoDisplay.innerHTML = '';
             DOM.currentUserEmailDisplay.textContent = '';
             DOM.authMessage.textContent = '';
             DOM.adminMessage.textContent = '';
@@ -493,6 +525,7 @@
                     content: memoText,
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
+                DOM.memoDisplay.innerHTML = linkify(memoText);
                 alert('メモを保存しました！');
             } catch (error) {
                 alert('メモの保存に失敗しました。');
@@ -506,10 +539,13 @@
             }
             try {
                 const doc = await db.collection('memos').doc(userId).get();
-                DOM.memoContent.value = doc.exists ? doc.data().content || '' : '';
+                const memoText = doc.exists ? doc.data().content || '' : '';
+                DOM.memoContent.value = memoText;
+                DOM.memoDisplay.innerHTML = linkify(memoText);
             } catch (error) {
                 console.error("メモ読み込みエラー:", error);
                 DOM.memoContent.value = 'メモの読み込みに失敗しました。';
+                DOM.memoDisplay.innerHTML = 'メモの読み込みに失敗しました。';
             }
         };
     </script>
