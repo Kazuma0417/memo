@@ -8,31 +8,12 @@
         body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; margin-top: 20px; }
         .container { background-color: #f0f0f0; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); margin-bottom: 20px; width: 80%; max-width: 800px; }
         .auth-form input { margin-bottom: 10px; padding: 8px; width: calc(100% - 16px); box-sizing: border-box; }
-        
         textarea { width: 100%; height: 200px; margin-bottom: 10px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        .editable-div {
-            width: 100%;
-            height: 200px;
-            margin-bottom: 10px;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box;
-            background-color: #fff;
-            overflow-y: auto;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
-        .editable-div:empty:before {
-            content: attr(placeholder);
-            color: #999;
-            pointer-events: none;
-        }
-
         button { padding: 8px 12px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 5px; }
         button:hover { background-color: #0056b3; }
         .delete-button { background-color: #dc3545; }
         .delete-button:hover { background-color: #c82333; }
+        /* 閲覧ボタンの色は緑色 */
         .view-button { background-color: #28a745; } 
         .view-button:hover { background-color: #218838; }
         .message { color: red; margin-top: 10px; }
@@ -41,15 +22,60 @@
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th, td { border: 1px solid #ccc; padding: 8px; text-align: left; word-break: break-all; }
         .section-separator { margin: 40px 0; border: none; border-top: 1px solid #eee; }
-        #version-info { position: fixed; bottom: 10px; right: 10px; font-size: 0.8em; color: #888; background-color: rgba(255, 255, 255, 0.7); padding: 5px 10px; border-radius: 5px; z-index: 1000; }
-        #memo-viewer-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center; z-index: 2000; }
-        #memo-viewer-content { background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 20px rgba(0,0,0,0.2); width: 90%; max-width: 600px; max-height: 80vh; overflow-y: auto; }
-        #memo-viewer-content textarea { width: 100%; height: 300px; border: 1px solid #ccc; padding: 10px; box-sizing: border-box; resize: vertical; }
-        #memo-viewer-content button { margin-top: 10px; float: right; }
+
+        /* バージョン表示用のスタイル */
+        #version-info {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            font-size: 0.8em;
+            color: #888;
+            background-color: rgba(255, 255, 255, 0.7);
+            padding: 5px 10px;
+            border-radius: 5px;
+            z-index: 1000;
+        }
+
+        /* メモ閲覧ポップアップのスタイル (簡易的なもの) */
+        #memo-viewer-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        #memo-viewer-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.2);
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        #memo-viewer-content textarea {
+            width: 100%;
+            height: 300px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            box-sizing: border-box;
+            resize: vertical;
+        }
+        #memo-viewer-content button {
+            margin-top: 10px;
+            float: right;
+        }
     </style>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+
 </head>
 <body>
 
@@ -111,7 +137,7 @@
             <h2 id="current-user-email"></h2>
             <button onclick="logout()">ユーザーログアウト</button>
         </div>
-        <div id="memo-content" contenteditable="true" class="editable-div" placeholder="ここにメモを書いてください..."></div>
+        <textarea id="memo-content" placeholder="ここにメモを書いてください..."></textarea>
         <button onclick="saveMemo()">メモを保存</button>
     </div>
 
@@ -125,18 +151,19 @@
         </div>
     </div>
 
+
     <script>
-        const APP_VERSION = 'v1.1.0';
+        const APP_VERSION = 'v1.1.1';
 
         const firebaseConfig = {
-          apiKey: "AIzaSyARuAgDXl2ydCKJjWAyl8cOQmIGRBYW2iU",
-          authDomain: "mywebmemoapp.firebaseapp.com",
-          projectId: "mywebmemoapp",
-          storageBucket: "mywebmemoapp.firebasestorage.app",
-          messagingSenderId: "381164213024",
-          appId: "1:381164213024:web:8c4f1d10d169ed039dfd45",
-          measurementId: "G-XGTJGL45B1"
-        };
+  apiKey: "AIzaSyARuAgDXl2ydCKJjWAyl8cOQmIGRBYW2iU",
+  authDomain: "mywebmemoapp.firebaseapp.com",
+  projectId: "mywebmemoapp",
+  storageBucket: "mywebmemoapp.firebasestorage.app",
+  messagingSenderId: "381164213024",
+  appId: "1:381164213024:web:8c4f1d10d169ed039dfd45",
+  measurementId: "G-XGTJGL45B1"
+};
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
@@ -160,36 +187,6 @@
             memoViewerTextarea: document.getElementById('memo-viewer-textarea'),
             viewingUserEmailDisplay: document.getElementById('viewing-user-email')
         };
-        
-        const linkify = (text) => {
-            if (!text) return '';
-            // HTMLエスケープを先に行う
-            const safeText = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            
-            // テキストを行に分割
-            const lines = safeText.split('\n');
-
-            const urlRegex = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])|(\bwww\.[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
-
-            // 各行についてURLをリンクに変換
-            const processedLines = lines.map(line => {
-                return line.replace(urlRegex, (url) => {
-                    let href = url;
-                    // 'www.'で始まるURLに 'http://' を補完
-                    if (!href.match(/^(https?|ftp|file):\/\//)) {
-                        href = 'http://' + href;
-                    }
-                    // URL内の " を &quot; にエスケープ
-                    const escapedHref = href.replace(/"/g, '&quot;');
-                    
-                    // リンクの後ろにゼロ幅スペース(&#8203;)を追加して、編集時の問題を回避する
-                    return `<a href="${escapedHref}" target="_blank" rel="noopener noreferrer">${url}</a>&#8203;`;
-                });
-            });
-
-            // 処理した行を<br>タグで結合して返す
-            return processedLines.join('<br>');
-        };
 
         let currentUserRole = null;
         let currentUserId = null;
@@ -206,7 +203,7 @@
                 DOM.subAdminDashboardContainer.style.display = 'block';
             } else if (role === "user") {
                 DOM.memoContainer.style.display = 'block';
-            } else { 
+            } else { // ログアウト状態
                 DOM.authContainer.style.display = 'block';
                 DOM.emailInput.value = '';
                 DOM.passwordInput.value = '';
@@ -216,17 +213,6 @@
         document.addEventListener('DOMContentLoaded', () => {
             DOM.versionInfoElement.textContent = `Version: ${APP_VERSION}`;
             DOM.loginForm.addEventListener('submit', e => { e.preventDefault(); login(); });
-
-            // メモエリア内のクリックを監視
-            DOM.memoContent.addEventListener('click', (e) => {
-                // クリックされたのが <a> タグの場合のみ処理
-                if (e.target.tagName === 'A') {
-                    // 本来の編集動作をキャンセル
-                    e.preventDefault(); 
-                    // リンクのURLを新しいタブで開く
-                    window.open(e.target.href, '_blank', 'noopener,noreferrer');
-                }
-            });
 
             const storedUserRole = localStorage.getItem('loggedInUserRole');
             const storedUserEmail = localStorage.getItem('loggedInUserEmail');
@@ -246,13 +232,14 @@
             }
         });
 
+        // ログアウト関数 (共通)
         const logout = () => {
             currentUserRole = null;
             currentUserId = null;
             localStorage.removeItem('loggedInUserRole');
             localStorage.removeItem('loggedInUserEmail');
             
-            DOM.memoContent.innerHTML = '';
+            DOM.memoContent.value = '';
             DOM.currentUserEmailDisplay.textContent = '';
             DOM.authMessage.textContent = '';
             DOM.adminMessage.textContent = '';
@@ -267,6 +254,7 @@
             await loadUsers(true);
         };
 
+        // loadUsers関数に引数 `showMessage` を追加
         const loadUsers = async (showMessage = false) => {
             if (currentUserRole !== "admin" && currentUserRole !== "sub_admin") {
                 DOM.adminMessage.textContent = 'アクセス権がありません。';
@@ -276,9 +264,11 @@
 
             try {
                 const usersSnapshot = await db.collection('users').get();
+                // admin ロールのユーザーを除外
                 let users = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
                                     .filter(user => user.role !== "admin"); 
                 
+                // 役割に基づいてソート: sub_admin > user の順
                 users.sort((a, b) => {
                     const roleOrder = {"sub_admin": 1, "user": 2}; 
                     const roleA = roleOrder[a.role || "user"];
@@ -326,6 +316,7 @@
             users.forEach(user => {
                 const isSelf = (user.email === currentUserId);
 
+                // フル管理者用テーブルの行 (adminロールは既にフィルター済み)
                 const adminRow = DOM.usersTableBody.insertRow();
                 adminRow.insertCell().textContent = user.email;
                 adminRow.insertCell().textContent = user.password;
@@ -345,9 +336,10 @@
                     deleteButton.onclick = () => deleteUser(user.email);
                     adminActionCell.appendChild(deleteButton);
                 } else {
-                    adminActionCell.textContent += ' (自分)';
+                    adminActionCell.textContent += ' (自分)'; // 「自身」から変更
                 }
 
+                // サブ管理者用テーブルの行 (パスワードと閲覧ボタンなし)
                 const subAdminRow = DOM.subAdminUsersTableBody.insertRow();
                 subAdminRow.insertCell().textContent = user.email;
                 const subAdminActionCell = subAdminRow.insertCell();
@@ -359,13 +351,13 @@
                     deleteButton.onclick = () => deleteUser(user.email);
                     subAdminActionCell.appendChild(deleteButton);
                 } else {
-                    subAdminActionCell.textContent = '(自分)';
+                    subAdminActionCell.textContent = '(自分)'; // 「自身」から変更
                 }
             });
         };
 
         const viewUserMemo = async (email) => {
-            if (currentUserRole !== "admin") {
+            if (currentUserRole !== "admin") { // 管理者のみ閲覧可能
                 alert('この操作には管理者権限が必要です。');
                 return;
             }
@@ -495,7 +487,7 @@
                 DOM.authMessage.textContent = 'ユーザーとしてログインしてください。';
                 return;
             }
-            const memoText = DOM.memoContent.textContent;
+            const memoText = DOM.memoContent.value;
             try {
                 await db.collection('memos').doc(currentUserId).set({
                     content: memoText,
@@ -514,11 +506,10 @@
             }
             try {
                 const doc = await db.collection('memos').doc(userId).get();
-                const memoText = doc.exists ? doc.data().content || '' : '';
-                DOM.memoContent.innerHTML = linkify(memoText);
+                DOM.memoContent.value = doc.exists ? doc.data().content || '' : '';
             } catch (error) {
                 console.error("メモ読み込みエラー:", error);
-                DOM.memoContent.textContent = 'メモの読み込みに失敗しました。';
+                DOM.memoContent.value = 'メモの読み込みに失敗しました。';
             }
         };
     </script>
