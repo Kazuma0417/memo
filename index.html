@@ -126,7 +126,7 @@
     </div>
 
     <script>
-        const APP_VERSION = 'v1.1.1';
+        const APP_VERSION = 'v1.1.0';
 
         const firebaseConfig = {
           apiKey: "AIzaSyARuAgDXl2ydCKJjWAyl8cOQmIGRBYW2iU",
@@ -163,6 +163,7 @@
         
         const linkify = (text) => {
             if (!text) return '';
+            // HTMLエスケープを先に行う
             const safeText = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
             
             // テキストを行に分割
@@ -174,11 +175,15 @@
             const processedLines = lines.map(line => {
                 return line.replace(urlRegex, (url) => {
                     let href = url;
+                    // 'www.'で始まるURLに 'http://' を補完
                     if (!href.match(/^(https?|ftp|file):\/\//)) {
                         href = 'http://' + href;
                     }
+                    // URL内の " を &quot; にエスケープ
                     const escapedHref = href.replace(/"/g, '&quot;');
-                    return `<a href="${escapedHref}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+                    
+                    // リンクの後ろにゼロ幅スペース(&#8203;)を追加して、編集時の問題を回避する
+                    return `<a href="${escapedHref}" target="_blank" rel="noopener noreferrer">${url}</a>&#8203;`;
                 });
             });
 
