@@ -164,16 +164,26 @@
         const linkify = (text) => {
             if (!text) return '';
             const safeText = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            
+            // テキストを行に分割
+            const lines = safeText.split('\n');
+
             const urlRegex = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])|(\bwww\.[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
-            const linkedText = safeText.replace(urlRegex, (url) => {
-                let href = url;
-                if (!href.match(/^(https?|ftp|file):\/\//)) {
-                    href = 'http://' + href;
-                }
-                const escapedHref = href.replace(/"/g, '&quot;');
-                return `<a href="${escapedHref}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+
+            // 各行についてURLをリンクに変換
+            const processedLines = lines.map(line => {
+                return line.replace(urlRegex, (url) => {
+                    let href = url;
+                    if (!href.match(/^(https?|ftp|file):\/\//)) {
+                        href = 'http://' + href;
+                    }
+                    const escapedHref = href.replace(/"/g, '&quot;');
+                    return `<a href="${escapedHref}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+                });
             });
-            return linkedText.replace(/\n/g, '<br>');
+
+            // 処理した行を<br>タグで結合して返す
+            return processedLines.join('<br>');
         };
 
         let currentUserRole = null;
